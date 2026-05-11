@@ -1,0 +1,28 @@
+{
+  "name": "node-servers",
+  "version": "1.0.0",
+  "description": "Express + MySQL backend API service",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "demo:api": "node scripts/demo-call.js",
+    "db:init": "mysql -u root -p < database/schema.sql"
+  },
+  "keywords": [
+    "express",
+    "mysql",
+    "api"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mysql2": "^3.12.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
