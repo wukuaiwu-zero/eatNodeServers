@@ -5,6 +5,10 @@ const familyService = require('./family.service');
 const mockFamilyRecipes = new Map();
 const mockFamilyMembers = new Map();
 
+// 这个 service 历史上叫 familyRecipe，但现在也承载了“家庭成员绑定”的能力。
+// 购物清单和食材库复用了这里的成员关系：
+// memberCode -> familyCode 是所有家庭共享数据的入口。
+
 function createConflictError(message) {
   const error = new Error(message);
   error.statusCode = 409;
@@ -18,6 +22,9 @@ function createNotFoundError(message) {
 }
 
 function normalizeRecipeJson(recipeJson) {
+  // 菜谱目前仍按“一个家庭一整份 JSON”存储。
+  // 如果调用方传字符串，就先 JSON.parse 验证它合法，再原样入库；
+  // 如果调用方传对象，就 stringify 后入库。
   if (recipeJson === undefined || recipeJson === null) {
     return null;
   }
@@ -39,6 +46,8 @@ function parseRecipeJson(recipeJson) {
 }
 
 function toFamilyRecipe(row) {
+  // 数据库字段是 snake_case，接口返回统一转成 camelCase。
+  // recipeJson 会尽量解析回对象，便于前端直接使用。
   if (!row) {
     return null;
   }
@@ -53,6 +62,8 @@ function toFamilyRecipe(row) {
 }
 
 function toFamilyMember(row) {
+  // family_members 是“某个设备/用户标识属于哪个家庭”的关系表。
+  // 当前没有完整登录体系，所以 memberCode 相当于前端侧保存的成员身份。
   if (!row) {
     return null;
   }
@@ -68,6 +79,8 @@ function toFamilyMember(row) {
 }
 
 async function bindMemberToInitialFamily(memberCode, familyCode) {
+  // 首次上传家庭数据时，允许自动创建家庭并把 memberCode 绑定进去。
+  // 这是为了降低客户端接入成本：前端只要带 memberCode + familyCode + 数据，就能完成初始化。
   await familyService.ensureFamilyExists(familyCode);
 
   if (env.useMockDb) {
@@ -99,6 +112,8 @@ async function bindMemberToInitialFamily(memberCode, familyCode) {
     [memberCode, familyCode]
   );
 
+  // 上面的 SQL 故意不允许已有 memberCode 被悄悄改到另一个家庭。
+  // 所以插入后再查一次：如果查出来的 familyCode 和请求不一致，就返回冲突。
   const member = await getFamilyMemberByCode(memberCode);
 
   if (member.familyCode !== familyCode) {
@@ -109,6 +124,9 @@ async function bindMemberToInitialFamily(memberCode, familyCode) {
 }
 
 async function joinFamily(memberCode, familyCode) {
+  // joinFamily 用于“加入一个已经存在的家庭”。
+  // 和 bindMemberToInitialFamily 不同，这里不会自动创建目标家庭；
+  // 目标不存在就 404，避免用户输错家庭码时凭空建出一个家庭。
   const targetFamily = await familyService.getFamilyByCode(familyCode);
 
   if (!targetFamily) {
@@ -169,6 +187,8 @@ async function joinFamily(memberCode, familyCode) {
 }
 
 async function getFamilyMemberByCode(memberCode) {
+  // 所有按成员读取家庭共享数据的接口，第一步都会走这里。
+  // 查不到 member，就说明这个 memberCode 还没有被任何家庭数据初始化/加入过。
   if (env.useMockDb) {
     return toFamilyMember(mockFamilyMembers.get(memberCode));
   }
@@ -202,6 +222,9 @@ async function listFamilyMembers(familyCode) {
 }
 
 async function upsertFamilyRecipe(familyCode, recipeJson) {
+  // family_recipes 是 family_code 唯一。
+  // 同一个家庭再次上传菜谱时，整份 recipe_json 会覆盖旧值。
+  // 购物清单/食材库没有沿用这个模式，因为它们需要 item 级同步和软删除。
   const normalizedRecipeJson = normalizeRecipeJson(recipeJson);
 
   if (env.useMockDb) {
@@ -232,6 +255,8 @@ async function upsertFamilyRecipe(familyCode, recipeJson) {
 }
 
 async function upsertFamilyRecipeByMember(memberCode, familyCode, recipeJson) {
+  // 上传菜谱时顺手完成成员和家庭的初始绑定。
+  // 返回 member + recipe，是为了前端能同时拿到“我属于哪个家庭”和“当前家庭菜谱”。
   const member = await bindMemberToInitialFamily(memberCode, familyCode);
   const recipe = await upsertFamilyRecipe(member.familyCode, recipeJson);
 
@@ -257,6 +282,8 @@ async function getFamilyRecipeByCode(familyCode) {
 }
 
 async function getFamilyRecipeByMember(memberCode) {
+  // 按 memberCode 查菜谱时，不直接相信客户端传 familyCode。
+  // 后端从 family_members 找到真实 familyCode，再读取这个家庭的菜谱。
   const member = await getFamilyMemberByCode(memberCode);
 
   if (!member) {

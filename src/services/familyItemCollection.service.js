@@ -2,6 +2,12 @@ const { query } = require('../config/db');
 const { env } = require('../config/env');
 const familyRecipeService = require('./familyRecipe.service');
 
+// 购物清单和食材库的数据结构现在几乎一样，但业务上要分开表存。
+// 这个文件只抽取“家庭条目集合”的公共同步逻辑：
+// - 传入 tableName 后，同一套增删改查可以服务不同表。
+// - 业务入口仍然分成 familyShopping.service / familyIngredient.service。
+// 这样既避免复制两份一样的代码，也不会把两个业务的数据混在一张表里。
+
 function createNotFoundError(message) {
   const error = new Error(message);
   error.statusCode = 404;
@@ -9,6 +15,8 @@ function createNotFoundError(message) {
 }
 
 function parseItemJson(itemJson) {
+  // MySQL 里 item_json 存的是字符串，返回给前端时尽量还原成对象。
+  // 这里保留兜底：如果历史数据不是合法 JSON，就原样返回，避免接口直接炸掉。
   try {
     return JSON.parse(itemJson);
   } catch (error) {
@@ -17,10 +25,16 @@ function parseItemJson(itemJson) {
 }
 
 function createItemId() {
+  // 客户端离线新增时最好自己带 id；如果没带，服务端临时补一个。
+  // 这里不是强安全唯一 ID，只是给普通清单条目兜底使用。
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function normalizeItem(itemJson, familyCode) {
+  // 入口兼容两种请求体：
+  // - 前端直接传对象
+  // - 前端传 JSON 字符串
+  // 统一成对象后，后面的存储逻辑就不用关心来源格式。
   if (itemJson === undefined || itemJson === null) {
     throw new TypeError('itemJson is required');
   }
@@ -36,6 +50,8 @@ function normalizeItem(itemJson, familyCode) {
     throw new TypeError('item id is required');
   }
 
+  // create_time 继续沿用客户端已有字段，方便和现有小程序/前端数据结构对齐。
+  // 如果客户端没给或给错，服务端用当前时间兜底。
   const createTime = Number(item.create_time || Date.now());
 
   return {
@@ -43,8 +59,12 @@ function normalizeItem(itemJson, familyCode) {
     createTime: Number.isFinite(createTime) ? createTime : Date.now(),
     item: {
       ...item,
+      // 同时保留 id 和 _id，是为了兼容你现有对象里两个字段都存在的情况。
+      // 后端真正做唯一约束时用 item_id 字段，对外返回时再补齐这两个别名。
       id: itemId,
       _id: itemId,
+      // 请求里可能传 family_id，也可能传 familyCode。入库前统一以服务端确认的家庭为准，
+      // 防止前端对象里 family_id 写错导致串家庭。
       family_id: familyCode,
       create_time: Number.isFinite(createTime) ? createTime : Date.now()
     }
@@ -52,6 +72,9 @@ function normalizeItem(itemJson, familyCode) {
 }
 
 function toItem(row) {
+  // 数据库行 -> API 返回对象。
+  // 这里把系统字段 version/deleted/updatedAt 合并回条目对象，
+  // 前端同步时就能知道这条数据是否被删除、版本是多少、何时更新。
   if (!row) {
     return null;
   }
@@ -73,9 +96,12 @@ function toItem(row) {
 }
 
 function createFamilyItemCollectionService({ tableName }) {
+  // USE_MOCK_DB=true 时不连 MySQL，直接用内存 Map 模拟表。
+  // 这适合本地接口验证；服务重启后 mock 数据会清空。
   const mockItems = new Map();
 
   function getMockKey(familyCode, itemId) {
+    // item_id 只在同一个家庭内唯一，所以 mock key 要把 familyCode 拼进去。
     return `${familyCode}:${itemId}`;
   }
 
@@ -105,6 +131,11 @@ function createFamilyItemCollectionService({ tableName }) {
       return toItem(row);
     }
 
+    // MySQL 这里用 upsert：
+    // - 第一次新增时插入 version=1。
+    // - 再次上传同一个 family_code + item_id 时更新 JSON，并把 version + 1。
+    // - deleted_at 置空表示“重新上传一条被删过的数据”会恢复它。
+    // 这就是购物清单/食材库最小可用的同步写入模型。
     await query(
       `INSERT INTO ${tableName}
          (item_id, family_code, item_json, create_time, created_by, updated_by, version)
@@ -130,6 +161,8 @@ function createFamilyItemCollectionService({ tableName }) {
   }
 
   async function upsertItemByMember(memberCode, familyCode, itemJson) {
+    // 所有写入都先绑定/确认 memberCode 和 familyCode 的关系。
+    // 这个动作很关键：后面的数据写入使用 member.familyCode，而不是盲信请求体。
     const member = await familyRecipeService.bindMemberToInitialFamily(memberCode, familyCode);
     const item = await upsertItem(member.familyCode, member.memberCode, itemJson);
 
@@ -155,6 +188,8 @@ function createFamilyItemCollectionService({ tableName }) {
   }
 
   async function listItemsByFamily(familyCode, options = {}) {
+    // 普通列表默认只返回未删除数据。
+    // 增量同步接口需要知道“哪些被删了”，才会显式包含 deleted_at 不为空的数据。
     const includeDeleted = Boolean(options.includeDeleted);
 
     if (env.useMockDb) {
@@ -178,6 +213,8 @@ function createFamilyItemCollectionService({ tableName }) {
   }
 
   async function listItemsByMember(memberCode, options = {}) {
+    // 对外接口通常只有 memberCode。先通过成员表找到家庭，再查该家庭的数据。
+    // 这样前端不需要反复传 familyCode，也减少越权读其他家庭数据的风险。
     const member = await familyRecipeService.getFamilyMemberByCode(memberCode);
 
     if (!member) {
@@ -193,6 +230,9 @@ function createFamilyItemCollectionService({ tableName }) {
   }
 
   async function getChangesByMember(memberCode, since) {
+    // 增量同步：客户端保存上次拿到的 serverTime，下次作为 since 传回来。
+    // 服务端返回 since 之后更新过的条目，包括软删除条目。
+    // 注意这里用服务端时间作为同步水位，比客户端本地时间可靠。
     const member = await familyRecipeService.getFamilyMemberByCode(memberCode);
 
     if (!member) {
@@ -231,6 +271,9 @@ function createFamilyItemCollectionService({ tableName }) {
   }
 
   async function deleteItemByMember(memberCode, itemId) {
+    // 删除采用软删除，不物理删行。
+    // 原因是多设备同步时，其他设备需要收到“这条已删除”的事件；
+    // 如果直接 DELETE，离线设备回来后就不知道这条数据曾经被删过。
     const member = await familyRecipeService.getFamilyMemberByCode(memberCode);
 
     if (!member) {

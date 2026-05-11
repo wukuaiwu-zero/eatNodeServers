@@ -2,12 +2,19 @@ CREATE DATABASE IF NOT EXISTS node_servers DEFAULT CHARACTER SET utf8mb4 COLLATE
 
 USE node_servers;
 
+-- 这份 SQL 用来给真实 MySQL 灌一组演示数据，不是 USE_MOCK_DB 的内存 mock。
+-- 它可以重复执行：下面大量使用 ON DUPLICATE KEY UPDATE，
+-- 已存在的数据会被更新，不会因为唯一键冲突中断。
+
+-- 1. 准备一个默认家庭。family_code 是后续所有共享数据的关联主键。
 INSERT INTO families (family_code, family_name, is_deleted)
 VALUES ('default_family', '默认家庭', 0)
 ON DUPLICATE KEY UPDATE
   family_name = VALUES(family_name),
   is_deleted = 0;
 
+-- 2. 准备两个家庭成员。聚合接口 /api/family-data/member/member_a
+-- 会先从 family_members 查 member_a 属于哪个家庭，再读取这个家庭的数据。
 INSERT INTO family_members (member_code, family_code, joined_family)
 VALUES
   ('member_a', 'default_family', 1),
@@ -16,6 +23,7 @@ ON DUPLICATE KEY UPDATE
   family_code = VALUES(family_code),
   joined_family = VALUES(joined_family);
 
+-- 3. 菜谱当前按“家庭 -> 一整份 JSON”存储，所以 family_recipes 每个家庭只有一行。
 INSERT INTO family_recipes (family_code, recipe_json)
 VALUES (
   'default_family',
@@ -49,6 +57,8 @@ ON DUPLICATE KEY UPDATE
   recipe_json = VALUES(recipe_json),
   updated_at = CURRENT_TIMESTAMP;
 
+-- 4. 购物清单按 item 存储。item_json 保留前端原始字段，
+-- item_id / family_code / version / deleted_at 则服务于后端同步逻辑。
 INSERT INTO family_shopping_items
   (item_id, family_code, item_json, create_time, created_by, updated_by, version, deleted_at)
 VALUES
@@ -100,6 +110,8 @@ ON DUPLICATE KEY UPDATE
   deleted_at = NULL,
   updated_at = CURRENT_TIMESTAMP;
 
+-- 5. 食材库和购物清单字段目前相同，但单独放在 family_ingredient_items。
+-- 这样以后比如食材库要加保质期、库存预警，不会影响购物清单。
 INSERT INTO family_ingredient_items
   (item_id, family_code, item_json, create_time, created_by, updated_by, version, deleted_at)
 VALUES
