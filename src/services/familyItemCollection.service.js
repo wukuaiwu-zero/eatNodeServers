@@ -187,6 +187,21 @@ function createFamilyItemCollectionService({ tableName }) {
     return toItem(rows[0]);
   }
 
+  async function getItemByMember(memberCode, itemId) {
+    const member = await familyRecipeService.getFamilyMemberByCode(memberCode);
+
+    if (!member) {
+      return null;
+    }
+
+    const item = await getItemByFamily(member.familyCode, itemId);
+
+    return {
+      member,
+      item
+    };
+  }
+
   async function listItemsByFamily(familyCode, options = {}) {
     // 普通列表默认只返回未删除数据。
     // 增量同步接口需要知道“哪些被删了”，才会显式包含 deleted_at 不为空的数据。
@@ -270,6 +285,69 @@ function createFamilyItemCollectionService({ tableName }) {
     };
   }
 
+  async function getChangesByFamily(familyCode, since) {
+    const sinceMs = Number(since || 0);
+
+    if (env.useMockDb) {
+      const items = Array.from(mockItems.values())
+        .filter((row) => row.family_code === familyCode)
+        .filter((row) => Date.parse(row.updated_at) > sinceMs)
+        .sort((a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at))
+        .map(toItem);
+
+      return {
+        familyCode,
+        items,
+        serverTime: Date.now()
+      };
+    }
+
+    const rows = await query(
+      `SELECT id, item_id, family_code, item_json, create_time, version, deleted_at, created_at, updated_at
+       FROM ${tableName}
+       WHERE family_code = ? AND updated_at > FROM_UNIXTIME(?)
+       ORDER BY updated_at ASC, id ASC`,
+      [familyCode, Math.max(0, sinceMs) / 1000]
+    );
+
+    return {
+      familyCode,
+      items: rows.map(toItem),
+      serverTime: Date.now()
+    };
+  }
+
+  async function deleteItemByFamily(familyCode, itemId, memberCode = null) {
+    if (env.useMockDb) {
+      const key = getMockKey(familyCode, itemId);
+      const current = mockItems.get(key);
+
+      if (!current) {
+        return null;
+      }
+
+      current.deleted_at = new Date().toISOString();
+      current.updated_by = memberCode;
+      current.version += 1;
+      current.updated_at = current.deleted_at;
+      mockItems.set(key, current);
+
+      return toItem(current);
+    }
+
+    await query(
+      `UPDATE ${tableName}
+       SET deleted_at = CURRENT_TIMESTAMP,
+           updated_by = ?,
+           version = version + 1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE family_code = ? AND item_id = ? AND deleted_at IS NULL`,
+      [memberCode, familyCode, itemId]
+    );
+
+    return getItemByFamily(familyCode, itemId);
+  }
+
   async function deleteItemByMember(memberCode, itemId) {
     // 删除采用软删除，不物理删行。
     // 原因是多设备同步时，其他设备需要收到“这条已删除”的事件；
@@ -324,9 +402,13 @@ function createFamilyItemCollectionService({ tableName }) {
 
   return {
     upsertItemByMember,
+    getItemByFamily,
+    getItemByMember,
     listItemsByFamily,
     listItemsByMember,
     getChangesByMember,
+    getChangesByFamily,
+    deleteItemByFamily,
     deleteItemByMember
   };
 }

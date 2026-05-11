@@ -11,6 +11,10 @@ function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function getInput(req, key) {
+  return req.body?.[key] ?? req.query?.[key] ?? req.params?.[key];
+}
+
 function validateMemberCode(memberCode) {
   if (!memberCode) {
     return 'memberCode is required';
@@ -25,7 +29,7 @@ function validateMemberCode(memberCode) {
 
 async function getFamilyJsonData(req, res, next) {
   try {
-    const memberCode = normalizeText(req.params.memberCode);
+    const memberCode = normalizeText(getInput(req, 'memberCode') || getInput(req, 'membercode'));
     const memberCodeError = validateMemberCode(memberCode);
 
     if (memberCodeError) {

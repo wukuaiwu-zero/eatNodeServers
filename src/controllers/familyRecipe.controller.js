@@ -7,6 +7,10 @@ function normalizeFamilyCode(familyCode) {
   return typeof familyCode === 'string' ? familyCode.trim() : '';
 }
 
+function getInput(req, key) {
+  return req.body?.[key] ?? req.query?.[key] ?? req.params?.[key];
+}
+
 function normalizeMemberCode(memberCode) {
   return typeof memberCode === 'string' ? memberCode.trim() : '';
 }
@@ -37,8 +41,8 @@ function validateMemberCode(memberCode) {
 
 async function uploadFamilyRecipe(req, res, next) {
   try {
-    const memberCode = normalizeMemberCode(req.body.memberCode);
-    const familyCode = normalizeFamilyCode(req.body.familyCode);
+    const memberCode = normalizeMemberCode(getInput(req, 'memberCode') || getInput(req, 'membercode'));
+    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const memberCodeError = validateMemberCode(memberCode);
     const familyCodeError = validateFamilyCode(familyCode);
 
@@ -71,8 +75,8 @@ async function uploadFamilyRecipe(req, res, next) {
 
 async function joinFamily(req, res, next) {
   try {
-    const memberCode = normalizeMemberCode(req.body.memberCode);
-    const familyCode = normalizeFamilyCode(req.body.familyCode);
+    const memberCode = normalizeMemberCode(getInput(req, 'memberCode') || getInput(req, 'membercode'));
+    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const memberCodeError = validateMemberCode(memberCode);
     const familyCodeError = validateFamilyCode(familyCode);
 
@@ -93,7 +97,7 @@ async function joinFamily(req, res, next) {
 
 async function getFamilyRecipeByMember(req, res, next) {
   try {
-    const memberCode = normalizeMemberCode(req.params.memberCode);
+    const memberCode = normalizeMemberCode(getInput(req, 'memberCode') || getInput(req, 'membercode'));
     const memberCodeError = validateMemberCode(memberCode);
 
     if (memberCodeError) {
@@ -118,7 +122,7 @@ async function getFamilyRecipeByMember(req, res, next) {
 
 async function getFamilyRecipe(req, res, next) {
   try {
-    const familyCode = normalizeFamilyCode(req.params.familyCode);
+    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const familyCodeError = validateFamilyCode(familyCode);
 
     if (familyCodeError) {

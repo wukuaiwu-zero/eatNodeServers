@@ -8,6 +8,10 @@ function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function getInput(req, key) {
+  return req.body?.[key] ?? req.query?.[key] ?? req.params?.[key];
+}
+
 function normalizeNullableText(value) {
   if (value === undefined || value === null) {
     return null;
@@ -61,7 +65,7 @@ async function createFamily(req, res, next) {
 
 async function getFamily(req, res, next) {
   try {
-    const familyCode = normalizeText(req.params.familyCode);
+    const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const familyCodeError = validateFamilyCode(familyCode);
 
     if (familyCodeError) {
@@ -82,7 +86,7 @@ async function getFamily(req, res, next) {
 
 async function updateFamily(req, res, next) {
   try {
-    const familyCode = normalizeText(req.params.familyCode);
+    const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const familyName = normalizeNullableText(req.body.familyName);
     const familyCodeError = validateFamilyCode(familyCode);
     const familyNameError = validateFamilyName(familyName);
@@ -109,7 +113,7 @@ async function updateFamily(req, res, next) {
 
 async function deleteFamily(req, res, next) {
   try {
-    const familyCode = normalizeText(req.params.familyCode);
+    const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const familyCodeError = validateFamilyCode(familyCode);
 
     if (familyCodeError) {
@@ -130,7 +134,7 @@ async function deleteFamily(req, res, next) {
 
 async function listFamilyMembers(req, res, next) {
   try {
-    const familyCode = normalizeText(req.params.familyCode);
+    const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const familyCodeError = validateFamilyCode(familyCode);
 
     if (familyCodeError) {

@@ -58,29 +58,29 @@ FAMILY_CODE="ci_family_${RUN_ID}"
 MEMBER_CODE="ci_member_${RUN_ID}"
 
 echo "Verifying family recipe upload..."
-curl -fsS -X POST "${BASE_URL}/api/family-recipes/upload" \
+curl -fsS -X POST "${BASE_URL}/api/saveFamilyRecipe" \
   -H 'Content-Type: application/json' \
   -d "{\"memberCode\":\"${MEMBER_CODE}\",\"familyCode\":\"${FAMILY_CODE}\",\"recipeJson\":{\"name\":\"CI recipe\"}}" \
   > /dev/null
 
 echo "Verifying shopping list sync..."
-curl -fsS -X POST "${BASE_URL}/api/family-shopping/items" \
+curl -fsS -X POST "${BASE_URL}/api/saveFamilyShoppingItem" \
   -H 'Content-Type: application/json' \
   -d "{\"memberCode\":\"${MEMBER_CODE}\",\"familyCode\":\"${FAMILY_CODE}\",\"shoppingItemJson\":{\"name\":\"CI shopping\",\"num\":\"1\",\"category\":\"test\",\"price\":\"1\",\"done\":false,\"family_id\":\"${FAMILY_CODE}\",\"_id\":\"shop_${RUN_ID}\",\"create_time\":${RUN_ID},\"id\":\"shop_${RUN_ID}\"}}" \
   > /dev/null
 
-curl -fsS "${BASE_URL}/api/family-shopping/member/${MEMBER_CODE}/changes?since=0" > /dev/null
+curl -fsS "${BASE_URL}/api/getFamilyShoppingChanges?memberCode=${MEMBER_CODE}&since=0" > /dev/null
 
 echo "Verifying ingredient library sync..."
-curl -fsS -X POST "${BASE_URL}/api/family-ingredients/items" \
+curl -fsS -X POST "${BASE_URL}/api/saveFamilyIngredientItem" \
   -H 'Content-Type: application/json' \
   -d "{\"memberCode\":\"${MEMBER_CODE}\",\"familyCode\":\"${FAMILY_CODE}\",\"ingredientItemJson\":{\"name\":\"CI ingredient\",\"num\":\"1\",\"category\":\"test\",\"price\":\"1\",\"done\":false,\"family_id\":\"${FAMILY_CODE}\",\"_id\":\"ingredient_${RUN_ID}\",\"create_time\":${RUN_ID},\"id\":\"ingredient_${RUN_ID}\"}}" \
   > /dev/null
 
-curl -fsS "${BASE_URL}/api/family-ingredients/member/${MEMBER_CODE}/changes?since=0" > /dev/null
+curl -fsS "${BASE_URL}/api/getFamilyIngredientChanges?memberCode=${MEMBER_CODE}&since=0" > /dev/null
 
 echo "Verifying aggregate family data..."
-curl -fsS "${BASE_URL}/api/family-data/member/${MEMBER_CODE}" > /dev/null
+curl -fsS "${BASE_URL}/api/getFamilyData?memberCode=${MEMBER_CODE}" > /dev/null
 
 cleanup
 trap - EXIT INT TERM

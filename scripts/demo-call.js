@@ -1,7 +1,8 @@
 const baseUrl = process.env.API_BASE_URL || 'http://127.0.0.1:3000';
 
 async function request(path, options = {}) {
-  const url = `${baseUrl}${path}`;
+  const query = options.query ? `?${new URLSearchParams(options.query).toString()}` : '';
+  const url = `${baseUrl}${path}${query}`;
   const response = await fetch(url, {
     method: options.method || 'GET',
     headers: options.body
@@ -35,7 +36,7 @@ async function main() {
   const results = [];
 
   results.push(
-    await request('/api/families', {
+    await request('/api/createFamily', {
       method: 'POST',
       body: {
         familyCode,
@@ -45,7 +46,7 @@ async function main() {
   );
 
   results.push(
-    await request('/api/family-recipes/upload', {
+    await request('/api/saveFamilyRecipe', {
       method: 'POST',
       body: {
         memberCode,
@@ -57,6 +58,14 @@ async function main() {
             }
           ]
         }
+      }
+    })
+  );
+
+  results.push(
+    await request('/api/getFamilyData', {
+      query: {
+        memberCode
       }
     })
   );
