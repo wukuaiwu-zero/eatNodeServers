@@ -15,58 +15,132 @@
 | createdAt | string | 创建时间 |
 | updatedAt | string | 更新时间 |
 
-## POST /api/createFamily
+## 创建家庭
 
-创建家庭。
+### 接口地址
 
-### Body
-
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| familyCode | string | 是 | 家庭码，最长 100 字符 |
-| familyName | string | 否 | 家庭名称 |
-
-### 示例
-
-```bash
-curl -X POST http://localhost:3000/api/createFamily \
-  -H 'Content-Type: application/json' \
-  -d '{"familyCode":"default_family","familyName":"默认家庭"}'
+```text
+POST /api/createFamily
 ```
 
-## GET /api/getFamily
+### 请求参数示例
 
-查询家庭。
-
-### Query
-
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| familyCode | string | 是 | 家庭码 |
-
-### 示例
-
-```bash
-curl 'http://localhost:3000/api/getFamily?familyCode=default_family'
+```json
+{
+  "familyCode": "default_family",
+  "familyName": "默认家庭"
+}
 ```
 
-## POST /api/updateFamily
+### 返回参数示例
 
-修改家庭名称。
+```json
+{
+  "code": 200,
+  "res": {
+    "id": 1,
+    "familyCode": "default_family",
+    "familyName": "默认家庭",
+    "isDeleted": false,
+    "createdAt": "2026-05-11T10:00:00.000Z",
+    "updatedAt": "2026-05-11T10:00:00.000Z"
+  }
+}
+```
 
-### Body
+## 查询家庭
 
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| familyCode | string | 是 | 家庭码 |
-| familyName | string/null | 否 | 新家庭名称 |
+### 接口地址
 
-## POST /api/deleteFamily
+```text
+GET /api/getFamily?familyCode=default_family
+```
 
-软删除家庭。
+### 请求参数示例
 
-### Body
+```json
+{
+  "familyCode": "default_family"
+}
+```
 
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| familyCode | string | 是 | 家庭码 |
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "id": 1,
+    "familyCode": "default_family",
+    "familyName": "默认家庭",
+    "isDeleted": false,
+    "createdAt": "2026-05-11T10:00:00.000Z",
+    "updatedAt": "2026-05-11T10:00:00.000Z"
+  }
+}
+```
+
+## 修改家庭
+
+### 接口地址
+
+```text
+POST /api/updateFamily
+```
+
+### 请求参数示例
+
+```json
+{
+  "familyCode": "default_family",
+  "familyName": "新的家庭名"
+}
+```
+
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "id": 1,
+    "familyCode": "default_family",
+    "familyName": "新的家庭名",
+    "isDeleted": false,
+    "createdAt": "2026-05-11T10:00:00.000Z",
+    "updatedAt": "2026-05-11T10:10:00.000Z"
+  }
+}
+```
+
+## 删除家庭
+
+### 接口地址
+
+```text
+POST /api/deleteFamily
+```
+
+### 请求参数示例
+
+```json
+{
+  "familyCode": "default_family"
+}
+```
+
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "id": 1,
+    "familyCode": "default_family",
+    "familyName": "默认家庭",
+    "isDeleted": true,
+    "createdAt": "2026-05-11T10:00:00.000Z",
+    "updatedAt": "2026-05-11T10:20:00.000Z"
+  }
+}
+```

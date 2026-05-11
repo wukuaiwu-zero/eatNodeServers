@@ -4,54 +4,126 @@
 
 `family_recipes` 当前按家庭存一整份 `recipe_json`。同一个 `family_code` 再次上传会覆盖旧 JSON。
 
-## POST /api/saveFamilyRecipe
+## 保存家庭菜谱
 
-上传或更新家庭菜谱。首次上传时会自动创建家庭并绑定 `memberCode -> familyCode`。
+### 接口地址
 
-### Body
-
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| memberCode | string | 是 | 成员码 |
-| familyCode | string | 是 | 家庭码 |
-| recipeJson | object/string | 是 | 菜谱 JSON |
-
-### 示例
-
-```bash
-curl -X POST http://localhost:3000/api/saveFamilyRecipe \
-  -H 'Content-Type: application/json' \
-  -d '{"memberCode":"member_a","familyCode":"default_family","recipeJson":{"recipes":[{"name":"番茄炒蛋"}]}}'
+```text
+POST /api/saveFamilyRecipe
 ```
 
-## GET /api/getFamilyRecipeByMember
+### 请求参数示例
 
-按成员码查询当前家庭菜谱。
-
-### Query
-
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| memberCode | string | 是 | 成员码 |
-
-### 示例
-
-```bash
-curl 'http://localhost:3000/api/getFamilyRecipeByMember?memberCode=member_a'
+```json
+{
+  "memberCode": "member_a",
+  "familyCode": "default_family",
+  "recipeJson": {
+    "recipes": [
+      {
+        "id": "recipe_tomato_egg",
+        "name": "番茄炒蛋"
+      }
+    ]
+  }
+}
 ```
 
-## GET /api/getFamilyRecipe
+### 返回参数示例
 
-按家庭码查询菜谱。
+```json
+{
+  "code": 200,
+  "res": {
+    "member": {
+      "memberCode": "member_a",
+      "familyCode": "default_family",
+      "joinedFamily": false
+    },
+    "recipe": {
+      "id": 1,
+      "familyCode": "default_family",
+      "recipeJson": {
+        "recipes": [
+          {
+            "id": "recipe_tomato_egg",
+            "name": "番茄炒蛋"
+          }
+        ]
+      },
+      "createdAt": "2026-05-11T10:00:00.000Z",
+      "updatedAt": "2026-05-11T10:00:00.000Z"
+    }
+  }
+}
+```
 
-### Query
+## 按成员查询家庭菜谱
 
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| familyCode | string | 是 | 家庭码 |
+### 接口地址
 
-### 示例
+```text
+GET /api/getFamilyRecipeByMember?memberCode=member_a
+```
 
-```bash
-curl 'http://localhost:3000/api/getFamilyRecipe?familyCode=default_family'
+### 请求参数示例
+
+```json
+{
+  "memberCode": "member_a"
+}
+```
+
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "member": {
+      "memberCode": "member_a",
+      "familyCode": "default_family",
+      "joinedFamily": true
+    },
+    "recipe": {
+      "familyCode": "default_family",
+      "recipeJson": {
+        "recipes": []
+      }
+    }
+  }
+}
+```
+
+## 按家庭查询菜谱
+
+### 接口地址
+
+```text
+GET /api/getFamilyRecipe?familyCode=default_family
+```
+
+### 请求参数示例
+
+```json
+{
+  "familyCode": "default_family"
+}
+```
+
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "id": 1,
+    "familyCode": "default_family",
+    "recipeJson": {
+      "recipes": []
+    },
+    "createdAt": "2026-05-11T10:00:00.000Z",
+    "updatedAt": "2026-05-11T10:00:00.000Z"
+  }
+}
 ```

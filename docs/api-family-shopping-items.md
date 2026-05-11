@@ -21,73 +21,209 @@
 | deletedAt | string/null | 删除时间 |
 | updatedAt | string | 服务端更新时间 |
 
-## POST /api/saveFamilyShoppingItem
+## 保存购物清单条目
 
-新增或更新购物清单条目。
+### 接口地址
 
-### Body
-
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| memberCode | string | 是 | 成员码 |
-| familyCode | string | 是 | 家庭码 |
-| shoppingItemJson | object/string | 是 | 购物清单条目 |
-
-### 示例
-
-```bash
-curl -X POST http://localhost:3000/api/saveFamilyShoppingItem \
-  -H 'Content-Type: application/json' \
-  -d '{"memberCode":"member_a","familyCode":"default_family","shoppingItemJson":{"name":"番茄","num":"3个","category":"蔬菜","price":"6","done":false,"family_id":"default_family","_id":"shop_tomato","create_time":1778294348928,"id":"shop_tomato"}}'
+```text
+POST /api/saveFamilyShoppingItem
 ```
 
-## GET /api/getFamilyShoppingItem
+### 请求参数示例
 
-查询单条购物清单。推荐传 `familyCode + id`。
-
-### Query
-
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| familyCode | string | 是 | 家庭码 |
-| id | string | 是 | 条目 ID |
-
-### 示例
-
-```bash
-curl 'http://localhost:3000/api/getFamilyShoppingItem?familyCode=default_family&id=shop_tomato'
+```json
+{
+  "memberCode": "member_a",
+  "familyCode": "default_family",
+  "shoppingItemJson": {
+    "name": "番茄",
+    "num": "3个",
+    "category": "蔬菜",
+    "price": "6",
+    "done": false,
+    "family_id": "default_family",
+    "_id": "shop_tomato",
+    "create_time": 1778294348928,
+    "id": "shop_tomato"
+  }
+}
 ```
 
-## GET /api/getFamilyShoppingItems
+### 返回参数示例
 
-查询购物清单列表。可传 `familyCode`，也可传 `memberCode`。
-
-```bash
-curl 'http://localhost:3000/api/getFamilyShoppingItems?familyCode=default_family'
+```json
+{
+  "code": 200,
+  "res": {
+    "member": {
+      "memberCode": "member_a",
+      "familyCode": "default_family"
+    },
+    "item": {
+      "name": "番茄",
+      "num": "3个",
+      "category": "蔬菜",
+      "price": "6",
+      "done": false,
+      "family_id": "default_family",
+      "_id": "shop_tomato",
+      "create_time": 1778294348928,
+      "id": "shop_tomato",
+      "version": 1,
+      "deleted": false,
+      "deletedAt": null,
+      "updatedAt": "2026-05-11T10:00:00.000Z"
+    }
+  }
+}
 ```
 
-## GET /api/getFamilyShoppingChanges
+## 查询单条购物清单
 
-查询增量变更，包含已软删除条目。
+### 接口地址
 
-```bash
-curl 'http://localhost:3000/api/getFamilyShoppingChanges?familyCode=default_family&since=0'
+```text
+GET /api/getFamilyShoppingItem?familyCode=default_family&id=shop_tomato
 ```
 
-## POST /api/deleteFamilyShoppingItem
+### 请求参数示例
 
-软删除购物清单条目。
+```json
+{
+  "familyCode": "default_family",
+  "id": "shop_tomato"
+}
+```
 
-### Body
+### 返回参数示例
 
-| 参数 | 类型 | 必填 | 说明 |
-| --- | --- | --- | --- |
-| familyCode | string | 是 | 家庭码 |
-| id | string | 是 | 条目 ID |
-| memberCode | string | 否 | 操作成员码 |
+```json
+{
+  "code": 200,
+  "res": {
+    "name": "番茄",
+    "num": "3个",
+    "category": "蔬菜",
+    "price": "6",
+    "done": false,
+    "family_id": "default_family",
+    "_id": "shop_tomato",
+    "create_time": 1778294348928,
+    "id": "shop_tomato",
+    "version": 1,
+    "deleted": false,
+    "deletedAt": null,
+    "updatedAt": "2026-05-11T10:00:00.000Z"
+  }
+}
+```
 
-```bash
-curl -X POST http://localhost:3000/api/deleteFamilyShoppingItem \
-  -H 'Content-Type: application/json' \
-  -d '{"familyCode":"default_family","id":"shop_tomato","memberCode":"member_a"}'
+## 查询购物清单列表
+
+### 接口地址
+
+```text
+GET /api/getFamilyShoppingItems?familyCode=default_family
+```
+
+### 请求参数示例
+
+```json
+{
+  "familyCode": "default_family"
+}
+```
+
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "familyCode": "default_family",
+    "items": [
+      {
+        "name": "番茄",
+        "num": "3个",
+        "category": "蔬菜",
+        "price": "6",
+        "done": false,
+        "family_id": "default_family",
+        "_id": "shop_tomato",
+        "create_time": 1778294348928,
+        "id": "shop_tomato",
+        "version": 1,
+        "deleted": false,
+        "deletedAt": null,
+        "updatedAt": "2026-05-11T10:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+## 查询购物清单增量
+
+### 接口地址
+
+```text
+GET /api/getFamilyShoppingChanges?familyCode=default_family&since=0
+```
+
+### 请求参数示例
+
+```json
+{
+  "familyCode": "default_family",
+  "since": 0
+}
+```
+
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "familyCode": "default_family",
+    "items": [],
+    "serverTime": 1778482043966
+  }
+}
+```
+
+## 删除购物清单条目
+
+### 接口地址
+
+```text
+POST /api/deleteFamilyShoppingItem
+```
+
+### 请求参数示例
+
+```json
+{
+  "familyCode": "default_family",
+  "id": "shop_tomato",
+  "memberCode": "member_a"
+}
+```
+
+### 返回参数示例
+
+```json
+{
+  "code": 200,
+  "res": {
+    "name": "番茄",
+    "id": "shop_tomato",
+    "_id": "shop_tomato",
+    "family_id": "default_family",
+    "version": 2,
+    "deleted": true,
+    "deletedAt": "2026-05-11T10:20:00.000Z",
+    "updatedAt": "2026-05-11T10:20:00.000Z"
+  }
+}
 ```
