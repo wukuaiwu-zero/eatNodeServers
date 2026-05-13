@@ -1,11 +1,11 @@
+const crypto = require('crypto');
 const { query } = require('../config/db');
 const { env } = require('../config/env');
+const deviceService = require('./device.service');
 
 const mockFamilies = new Map();
-
-// families 表只保存“家庭本身”的信息，比如家庭码、家庭名、是否删除。
-// 成员属于哪个家庭、购物清单有哪些、食材库有哪些，都放在各自的表里。
-// 这样家庭作为一个稳定的上层容器，下面的业务可以独立演进。
+const mockInvites = new Map();
+const mockFamilyAccess = new Set();
 
 function createConflictError(message) {
   const error = new Error(message);
@@ -13,9 +13,31 @@ function createConflictError(message) {
   return error;
 }
 
+function createNotFoundError(message) {
+  const error = new Error(message);
+  error.statusCode = 404;
+  return error;
+}
+
+function createForbiddenError(message = 'device is not allowed to access this family') {
+  const error = new Error(message);
+  error.statusCode = 403;
+  return error;
+}
+
+function createFamilyCode() {
+  return `fam_${crypto.randomBytes(8).toString('hex')}`;
+}
+
+function createInviteCode() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function getAccessKey(deviceId, familyCode) {
+  return `${deviceId}:${familyCode}`;
+}
+
 function toFamily(row) {
-  // 数据库字段命名偏 SQL，接口返回偏 JS。
-  // 这里集中做字段转换，controller/service 其他地方就不用反复写映射逻辑。
   if (!row) {
     return null;
   }
@@ -25,14 +47,13 @@ function toFamily(row) {
     familyCode: row.family_code,
     familyName: row.family_name,
     isDeleted: Boolean(row.is_deleted),
+    createdByDeviceId: row.created_by_device_id || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }
 
-async function createFamily(familyCode, familyName = null) {
-  // 创建家庭时不允许重复 familyCode。
-  // familyCode 相当于家庭邀请码/唯一标识，后续成员加入和共享数据都靠它关联。
+async function createFamily(familyCode, familyName = null, options = {}) {
   if (env.useMockDb) {
     const current = mockFamilies.get(familyCode);
 
@@ -42,11 +63,15 @@ async function createFamily(familyCode, familyName = null) {
 
     const now = new Date().toISOString();
     const row = {
-      id: current?.id || mockFamilies.size + 1,
+      id: mockFamilies.size + 1,
       family_code: familyCode,
+      family_secret_hash: options.familySecret
+        ? deviceService.hashSecret(options.familySecret)
+        : null,
       family_name: familyName,
       is_deleted: 0,
-      created_at: current?.created_at || now,
+      created_by_device_id: options.deviceId || null,
+      created_at: now,
       updated_at: now
     };
 
@@ -55,28 +80,46 @@ async function createFamily(familyCode, familyName = null) {
   }
 
   const rows = await query(
-    `SELECT id, family_code, family_name, is_deleted, created_at, updated_at
+    `SELECT id
      FROM families
      WHERE family_code = ?`,
     [familyCode]
   );
-  const current = rows[0];
 
-  if (current) {
+  if (rows[0]) {
     throw createConflictError('familyCode already exists');
   }
 
   await query(
-    `INSERT INTO families (family_code, family_name)
-     VALUES (?, ?)`,
-    [familyCode, familyName]
+    `INSERT INTO families (family_code, family_secret_hash, family_name, created_by_device_id)
+     VALUES (?, ?, ?, ?)`,
+    [
+      familyCode,
+      options.familySecret ? deviceService.hashSecret(options.familySecret) : null,
+      familyName,
+      options.deviceId || null
+    ]
   );
+
   return getFamilyByCode(familyCode);
 }
 
+async function createFamilyForDevice(deviceId, familyName = null) {
+  const familyCode = createFamilyCode();
+  const familySecret = deviceService.createDeviceSecret();
+  const family = await createFamily(familyCode, familyName, {
+    deviceId,
+    familySecret
+  });
+  grantDeviceAccessToFamily(deviceId, family.familyCode);
+
+  return {
+    family,
+    familySecret
+  };
+}
+
 async function ensureFamilyExists(familyCode, familyName = null) {
-  // 这是“懒创建”入口：首次上传家庭菜谱/购物数据时，如果家庭不存在就自动创建。
-  // 对前端来说更顺滑，不需要先单独调用创建家庭接口。
   const current = await getFamilyByCode(familyCode);
 
   if (current) {
@@ -87,15 +130,13 @@ async function ensureFamilyExists(familyCode, familyName = null) {
 }
 
 async function getFamilyByCode(familyCode) {
-  // 软删除后的家庭不会被普通查询返回。
-  // 如果以后要做恢复家庭，再单独增加包含 is_deleted 的管理接口。
   if (env.useMockDb) {
     const family = mockFamilies.get(familyCode);
     return family && !family.is_deleted ? toFamily(family) : null;
   }
 
   const rows = await query(
-    `SELECT id, family_code, family_name, is_deleted, created_at, updated_at
+    `SELECT id, family_code, family_name, is_deleted, created_by_device_id, created_at, updated_at
      FROM families
      WHERE family_code = ? AND is_deleted = 0`,
     [familyCode]
@@ -129,8 +170,6 @@ async function updateFamily(familyCode, familyName) {
 }
 
 async function deleteFamily(familyCode) {
-  // 家庭删除也采用软删除，只标记 is_deleted=1。
-  // 这样历史成员关系和业务数据还在，后续做恢复/审计会更稳。
   if (env.useMockDb) {
     const current = mockFamilies.get(familyCode);
 
@@ -152,7 +191,7 @@ async function deleteFamily(familyCode) {
   );
 
   const rows = await query(
-    `SELECT id, family_code, family_name, is_deleted, created_at, updated_at
+    `SELECT id, family_code, family_name, is_deleted, created_by_device_id, created_at, updated_at
      FROM families
      WHERE family_code = ?`,
     [familyCode]
@@ -161,10 +200,118 @@ async function deleteFamily(familyCode) {
   return toFamily(rows[0]);
 }
 
+async function createFamilyInvite(familyCode, ttlMinutes = 60) {
+  const family = await getFamilyByCode(familyCode);
+
+  if (!family) {
+    throw createNotFoundError('Family not found');
+  }
+
+  const inviteCode = createInviteCode();
+  const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
+
+  if (env.useMockDb) {
+    mockInvites.set(inviteCode, {
+      id: mockInvites.size + 1,
+      family_code: familyCode,
+      invite_code: inviteCode,
+      expires_at: expiresAt.toISOString(),
+      used_at: null,
+      created_at: new Date().toISOString()
+    });
+
+    return {
+      familyCode,
+      inviteCode,
+      expiresAt: expiresAt.toISOString()
+    };
+  }
+
+  await query(
+    `INSERT INTO family_invites (family_code, invite_code, expires_at)
+     VALUES (?, ?, ?)`,
+    [familyCode, inviteCode, expiresAt]
+  );
+
+  return {
+    familyCode,
+    inviteCode,
+    expiresAt
+  };
+}
+
+async function consumeFamilyInvite(inviteCode) {
+  if (env.useMockDb) {
+    const invite = mockInvites.get(inviteCode);
+
+    if (!invite || Date.parse(invite.expires_at) <= Date.now()) {
+      throw createNotFoundError('inviteCode is invalid or expired');
+    }
+
+    invite.used_at = new Date().toISOString();
+    mockInvites.set(inviteCode, invite);
+    return invite.family_code;
+  }
+
+  const rows = await query(
+    `SELECT id, family_code, expires_at, used_at
+     FROM family_invites
+     WHERE invite_code = ?`,
+    [inviteCode]
+  );
+  const invite = rows[0];
+
+  if (!invite || new Date(invite.expires_at).getTime() <= Date.now()) {
+    throw createNotFoundError('inviteCode is invalid or expired');
+  }
+
+  await query(
+    `UPDATE family_invites SET used_at = CURRENT_TIMESTAMP WHERE id = ?`,
+    [invite.id]
+  );
+
+  return invite.family_code;
+}
+
+async function assertDeviceCanAccessFamily(deviceId, familyCode) {
+  if (env.useMockDb) {
+    if (mockFamilyAccess.has(getAccessKey(deviceId, familyCode))) {
+      return true;
+    }
+
+    throw createForbiddenError();
+  }
+
+  const rows = await query(
+    `SELECT id
+     FROM family_members
+     WHERE family_code = ? AND device_id = ? AND revoked_at IS NULL
+     LIMIT 1`,
+    [familyCode, deviceId]
+  );
+
+  if (rows[0]) {
+    return true;
+  }
+
+  throw createForbiddenError();
+}
+
+function grantDeviceAccessToFamily(deviceId, familyCode) {
+  if (env.useMockDb && deviceId && familyCode) {
+    mockFamilyAccess.add(getAccessKey(deviceId, familyCode));
+  }
+}
+
 module.exports = {
   createFamily,
+  createFamilyForDevice,
   ensureFamilyExists,
   getFamilyByCode,
   updateFamily,
-  deleteFamily
+  deleteFamily,
+  createFamilyInvite,
+  consumeFamilyInvite,
+  assertDeviceCanAccessFamily,
+  grantDeviceAccessToFamily
 };

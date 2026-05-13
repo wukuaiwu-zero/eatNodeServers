@@ -72,19 +72,32 @@ function toFamilyMember(row) {
     id: row.id,
     memberCode: row.member_code,
     familyCode: row.family_code,
+    deviceId: row.device_id || null,
+    role: row.role || 'member',
     joinedFamily: Boolean(row.joined_family),
+    revokedAt: row.revoked_at || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
 }
 
-async function bindMemberToInitialFamily(memberCode, familyCode) {
+function findMockMemberByDevice(deviceId, familyCode = null) {
+  return Array.from(mockFamilyMembers.values()).find((member) => {
+    if (member.device_id !== deviceId || member.revoked_at) {
+      return false;
+    }
+
+    return familyCode ? member.family_code === familyCode : true;
+  });
+}
+
+async function bindMemberToInitialFamily(memberCode, familyCode, options = {}) {
   // 首次上传家庭数据时，允许自动创建家庭并把 memberCode 绑定进去。
   // 这是为了降低客户端接入成本：前端只要带 memberCode + familyCode + 数据，就能完成初始化。
   await familyService.ensureFamilyExists(familyCode);
 
   if (env.useMockDb) {
-    const current = mockFamilyMembers.get(memberCode);
+    const current = mockFamilyMembers.get(memberCode) || findMockMemberByDevice(options.deviceId, familyCode);
 
     if (current && current.family_code !== familyCode) {
       throw createConflictError('memberCode is already bound to another familyCode');
@@ -95,7 +108,10 @@ async function bindMemberToInitialFamily(memberCode, familyCode) {
       id: mockFamilyMembers.size + 1,
       member_code: memberCode,
       family_code: familyCode,
+      device_id: options.deviceId || null,
+      role: options.role || 'member',
       joined_family: 0,
+      revoked_at: null,
       created_at: now,
       updated_at: now
     };
@@ -105,11 +121,12 @@ async function bindMemberToInitialFamily(memberCode, familyCode) {
   }
 
   await query(
-    `INSERT INTO family_members (member_code, family_code)
-     VALUES (?, ?)
+    `INSERT INTO family_members (member_code, family_code, device_id, role)
+     VALUES (?, ?, ?, ?)
      ON DUPLICATE KEY UPDATE
-       family_code = IF(family_code = VALUES(family_code), family_code, family_code)`,
-    [memberCode, familyCode]
+       family_code = IF(family_code = VALUES(family_code), family_code, family_code),
+       device_id = IF(device_id IS NULL, VALUES(device_id), device_id)`,
+    [memberCode, familyCode, options.deviceId || null, options.role || 'member']
   );
 
   // 上面的 SQL 故意不允许已有 memberCode 被悄悄改到另一个家庭。
@@ -121,6 +138,31 @@ async function bindMemberToInitialFamily(memberCode, familyCode) {
   }
 
   return member;
+}
+
+async function bindDeviceToFamily(deviceId, familyCode, role = 'member') {
+  const member = await bindMemberToInitialFamily(deviceId, familyCode, {
+    deviceId,
+    role
+  });
+  familyService.grantDeviceAccessToFamily(deviceId, familyCode);
+
+  if (env.useMockDb) {
+    const row = mockFamilyMembers.get(member.memberCode);
+    row.joined_family = 1;
+    row.updated_at = new Date().toISOString();
+    mockFamilyMembers.set(member.memberCode, row);
+    return toFamilyMember(row);
+  }
+
+  await query(
+    `UPDATE family_members
+     SET joined_family = 1
+     WHERE member_code = ?`,
+    [member.memberCode]
+  );
+
+  return getFamilyMemberByCode(member.memberCode);
 }
 
 async function joinFamily(memberCode, familyCode) {
@@ -142,7 +184,10 @@ async function joinFamily(memberCode, familyCode) {
         id: mockFamilyMembers.size + 1,
         member_code: memberCode,
         family_code: familyCode,
+        device_id: null,
+        role: 'member',
         joined_family: 1,
+        revoked_at: null,
         created_at: now,
         updated_at: now
       };
@@ -186,6 +231,11 @@ async function joinFamily(memberCode, familyCode) {
   return getFamilyMemberByCode(memberCode);
 }
 
+async function joinFamilyByInvite(deviceId, inviteCode) {
+  const familyCode = await familyService.consumeFamilyInvite(inviteCode);
+  return bindDeviceToFamily(deviceId, familyCode, 'member');
+}
+
 async function getFamilyMemberByCode(memberCode) {
   // 所有按成员读取家庭共享数据的接口，第一步都会走这里。
   // 查不到 member，就说明这个 memberCode 还没有被任何家庭数据初始化/加入过。
@@ -194,10 +244,29 @@ async function getFamilyMemberByCode(memberCode) {
   }
 
   const rows = await query(
-    `SELECT id, member_code, family_code, joined_family, created_at, updated_at
+    `SELECT id, member_code, family_code, device_id, role, joined_family, revoked_at, created_at, updated_at
      FROM family_members
-     WHERE member_code = ?`,
+     WHERE member_code = ? AND revoked_at IS NULL`,
     [memberCode]
+  );
+
+  return toFamilyMember(rows[0]);
+}
+
+async function getFamilyMemberByDevice(deviceId, familyCode = null) {
+  if (env.useMockDb) {
+    return toFamilyMember(findMockMemberByDevice(deviceId, familyCode));
+  }
+
+  const familyFilter = familyCode ? 'AND family_code = ?' : '';
+  const params = familyCode ? [deviceId, familyCode] : [deviceId];
+  const rows = await query(
+    `SELECT id, member_code, family_code, device_id, role, joined_family, revoked_at, created_at, updated_at
+     FROM family_members
+     WHERE device_id = ? AND revoked_at IS NULL ${familyFilter}
+     ORDER BY id ASC
+     LIMIT 1`,
+    params
   );
 
   return toFamilyMember(rows[0]);
@@ -211,9 +280,9 @@ async function listFamilyMembers(familyCode) {
   }
 
   const rows = await query(
-    `SELECT id, member_code, family_code, joined_family, created_at, updated_at
+    `SELECT id, member_code, family_code, device_id, role, joined_family, revoked_at, created_at, updated_at
      FROM family_members
-     WHERE family_code = ?
+     WHERE family_code = ? AND revoked_at IS NULL
      ORDER BY id ASC`,
     [familyCode]
   );
@@ -266,6 +335,21 @@ async function upsertFamilyRecipeByMember(memberCode, familyCode, recipeJson) {
   };
 }
 
+async function upsertFamilyRecipeByDevice(deviceId, familyCode, recipeJson) {
+  const member = await getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    throw createNotFoundError('device has not joined this family');
+  }
+
+  const recipe = await upsertFamilyRecipe(member.familyCode, recipeJson);
+
+  return {
+    member,
+    recipe
+  };
+}
+
 async function getFamilyRecipeByCode(familyCode) {
   if (env.useMockDb) {
     return toFamilyRecipe(mockFamilyRecipes.get(familyCode));
@@ -305,13 +389,33 @@ async function getFamilyRecipeByMember(memberCode) {
   };
 }
 
+async function getFamilyRecipeByDevice(deviceId) {
+  const member = await getFamilyMemberByDevice(deviceId);
+
+  if (!member) {
+    return null;
+  }
+
+  const recipe = await getFamilyRecipeByCode(member.familyCode);
+
+  return {
+    member,
+    recipe
+  };
+}
+
 module.exports = {
   bindMemberToInitialFamily,
+  bindDeviceToFamily,
   joinFamily,
+  joinFamilyByInvite,
   getFamilyMemberByCode,
+  getFamilyMemberByDevice,
   listFamilyMembers,
   upsertFamilyRecipe,
   upsertFamilyRecipeByMember,
+  upsertFamilyRecipeByDevice,
   getFamilyRecipeByCode,
-  getFamilyRecipeByMember
+  getFamilyRecipeByMember,
+  getFamilyRecipeByDevice
 };

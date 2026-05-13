@@ -1,7 +1,9 @@
 const familyRecipeService = require('../services/familyRecipe.service');
+const familyService = require('../services/family.service');
+const deviceService = require('../services/device.service');
+const { getDeviceCredentials } = require('../utils/request');
 
 const FAMILY_CODE_MAX_LENGTH = 100;
-const MEMBER_CODE_MAX_LENGTH = 100;
 
 function normalizeFamilyCode(familyCode) {
   return typeof familyCode === 'string' ? familyCode.trim() : '';
@@ -9,10 +11,6 @@ function normalizeFamilyCode(familyCode) {
 
 function getInput(req, key) {
   return req.body?.[key] ?? req.query?.[key] ?? req.params?.[key];
-}
-
-function normalizeMemberCode(memberCode) {
-  return typeof memberCode === 'string' ? memberCode.trim() : '';
 }
 
 function validateFamilyCode(familyCode) {
@@ -27,28 +25,12 @@ function validateFamilyCode(familyCode) {
   return null;
 }
 
-function validateMemberCode(memberCode) {
-  if (!memberCode) {
-    return 'memberCode is required';
-  }
-
-  if (memberCode.length > MEMBER_CODE_MAX_LENGTH) {
-    return `memberCode must be ${MEMBER_CODE_MAX_LENGTH} characters or fewer`;
-  }
-
-  return null;
-}
-
 async function uploadFamilyRecipe(req, res, next) {
   try {
-    const memberCode = normalizeMemberCode(getInput(req, 'memberCode') || getInput(req, 'membercode'));
     const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
-    const memberCodeError = validateMemberCode(memberCode);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
     const familyCodeError = validateFamilyCode(familyCode);
-
-    if (memberCodeError) {
-      return res.status(400).json({ message: memberCodeError });
-    }
 
     if (familyCodeError) {
       return res.status(400).json({ message: familyCodeError });
@@ -58,8 +40,8 @@ async function uploadFamilyRecipe(req, res, next) {
       return res.status(400).json({ message: 'recipeJson is required' });
     }
 
-    const data = await familyRecipeService.upsertFamilyRecipeByMember(
-      memberCode,
+    const data = await familyRecipeService.upsertFamilyRecipeByDevice(
+      device.deviceId,
       familyCode,
       req.body.recipeJson
     );
@@ -75,20 +57,15 @@ async function uploadFamilyRecipe(req, res, next) {
 
 async function joinFamily(req, res, next) {
   try {
-    const memberCode = normalizeMemberCode(getInput(req, 'memberCode') || getInput(req, 'membercode'));
-    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
-    const memberCodeError = validateMemberCode(memberCode);
-    const familyCodeError = validateFamilyCode(familyCode);
+    const inviteCode = normalizeFamilyCode(getInput(req, 'inviteCode') || getInput(req, 'invitecode'));
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
-    if (memberCodeError) {
-      return res.status(400).json({ message: memberCodeError });
+    if (!inviteCode) {
+      return res.status(400).json({ message: 'inviteCode is required' });
     }
 
-    if (familyCodeError) {
-      return res.status(400).json({ message: familyCodeError });
-    }
-
-    const member = await familyRecipeService.joinFamily(memberCode, familyCode);
+    const member = await familyRecipeService.joinFamilyByInvite(device.deviceId, inviteCode);
     return res.json({ data: member });
   } catch (error) {
     return next(error);
@@ -97,14 +74,10 @@ async function joinFamily(req, res, next) {
 
 async function getFamilyRecipeByMember(req, res, next) {
   try {
-    const memberCode = normalizeMemberCode(getInput(req, 'memberCode') || getInput(req, 'membercode'));
-    const memberCodeError = validateMemberCode(memberCode);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
-    if (memberCodeError) {
-      return res.status(400).json({ message: memberCodeError });
-    }
-
-    const data = await familyRecipeService.getFamilyRecipeByMember(memberCode);
+    const data = await familyRecipeService.getFamilyRecipeByDevice(device.deviceId);
 
     if (!data) {
       return res.status(404).json({ message: 'Family member not found' });
@@ -128,6 +101,10 @@ async function getFamilyRecipe(req, res, next) {
     if (familyCodeError) {
       return res.status(400).json({ message: familyCodeError });
     }
+
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+    await familyService.assertDeviceCanAccessFamily(device.deviceId, familyCode);
 
     const recipe = await familyRecipeService.getFamilyRecipeByCode(familyCode);
 

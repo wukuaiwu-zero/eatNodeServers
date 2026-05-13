@@ -1,83 +1,38 @@
-# family_members 家庭成员表接口
+# family_members 家庭成员接口
 
-## 表说明
+`family_members` 保存匿名设备和家庭的绑定关系：
 
-`family_members` 保存 `memberCode -> familyCode` 的绑定关系。当前项目没有完整登录体系，`memberCode` 相当于前端本地保存的成员/设备身份。
+```text
+deviceId -> familyCode
+```
 
-## 数据对象
-
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| id | number | 绑定 ID |
-| memberCode | string | 成员码 |
-| familyCode | string | 家庭码 |
-| joinedFamily | boolean | 是否主动加入过家庭 |
-| createdAt | string | 创建时间 |
-| updatedAt | string | 更新时间 |
+`memberCode` 当前直接使用 `deviceId`，用于兼容已有 service 字段命名。
 
 ## 加入家庭
-
-### 接口地址
 
 ```text
 POST /api/joinFamily
 ```
 
-### 请求参数示例
+请求头：
 
-```json
-{
-  "memberCode": "member_a",
-  "familyCode": "default_family"
-}
+```text
+X-Device-Id: dev_xxx
+X-Device-Secret: 设备密钥
 ```
 
-### 返回参数示例
+请求体：
 
 ```json
 {
-  "code": 200,
-  "res": {
-    "id": 1,
-    "memberCode": "member_a",
-    "familyCode": "default_family",
-    "joinedFamily": true,
-    "createdAt": "2026-05-11T10:00:00.000Z",
-    "updatedAt": "2026-05-11T10:00:00.000Z"
-  }
+  "inviteCode": "123456"
 }
 ```
 
 ## 查询家庭成员
 
-### 接口地址
-
 ```text
-GET /api/getFamilyMembers?familyCode=default_family
+GET /api/getFamilyMembers?familyCode=fam_xxx
 ```
 
-### 请求参数示例
-
-```json
-{
-  "familyCode": "default_family"
-}
-```
-
-### 返回参数示例
-
-```json
-{
-  "code": 200,
-  "res": [
-    {
-      "id": 1,
-      "memberCode": "member_a",
-      "familyCode": "default_family",
-      "joinedFamily": true,
-      "createdAt": "2026-05-11T10:00:00.000Z",
-      "updatedAt": "2026-05-11T10:00:00.000Z"
-    }
-  ]
-}
-```
+请求设备必须已加入该家庭。

@@ -48,23 +48,51 @@ CREATE TABLE IF NOT EXISTS family_recipes (
 CREATE TABLE IF NOT EXISTS families (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   family_code VARCHAR(100) NOT NULL,
+  family_secret_hash VARCHAR(255) DEFAULT NULL,
   family_name VARCHAR(100) DEFAULT NULL,
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+  created_by_device_id VARCHAR(100) DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_families_family_code (family_code)
 );
 
+CREATE TABLE IF NOT EXISTS devices (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  device_id VARCHAR(100) NOT NULL,
+  device_secret_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  last_seen_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_devices_device_id (device_id)
+);
+
+CREATE TABLE IF NOT EXISTS family_invites (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  family_code VARCHAR(100) NOT NULL,
+  invite_code VARCHAR(20) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  used_at TIMESTAMP NULL DEFAULT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_family_invites_invite_code (invite_code),
+  KEY idx_family_invites_family_code (family_code)
+);
+
 CREATE TABLE IF NOT EXISTS family_members (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   member_code VARCHAR(100) NOT NULL,
   family_code VARCHAR(100) NOT NULL,
+  device_id VARCHAR(100) DEFAULT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'member',
   joined_family TINYINT(1) NOT NULL DEFAULT 0,
+  revoked_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uk_family_members_member_code (member_code),
+  UNIQUE KEY uk_family_members_family_device (family_code, device_id),
   KEY idx_family_members_family_code (family_code)
 );
 

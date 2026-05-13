@@ -1,146 +1,130 @@
-# families 家庭表接口
+# families 家庭接口
 
-## 表说明
+## 认证方式
 
-`families` 保存家庭本身的信息。`family_code` 是家庭唯一标识，后续家庭成员、菜谱、购物清单、食材库都通过它关联。
+除 `POST /api/registerDevice` 外，家庭和同步接口都需要请求头：
 
-## 数据对象
+```text
+X-Device-Id: dev_xxx
+X-Device-Secret: 设备密钥
+```
 
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| id | number | 家庭 ID |
-| familyCode | string | 家庭码 |
-| familyName | string/null | 家庭名称 |
-| isDeleted | boolean | 是否软删除 |
-| createdAt | string | 创建时间 |
-| updatedAt | string | 更新时间 |
+## 注册匿名设备
+
+```text
+POST /api/registerDevice
+```
+
+请求体可为空。服务端会生成匿名设备：
+
+```json
+{
+  "data": {
+    "device": {
+      "deviceId": "dev_abc"
+    },
+    "deviceSecret": "只返回一次的密钥"
+  }
+}
+```
+
+前端需要把 `deviceId/deviceSecret` 存到本地缓存。
 
 ## 创建家庭
-
-### 接口地址
 
 ```text
 POST /api/createFamily
 ```
 
-### 请求参数示例
+请求：
 
 ```json
 {
-  "familyCode": "default_family",
   "familyName": "默认家庭"
 }
 ```
 
-### 返回参数示例
+返回：
 
 ```json
 {
-  "code": 200,
-  "res": {
-    "id": 1,
-    "familyCode": "default_family",
-    "familyName": "默认家庭",
-    "isDeleted": false,
-    "createdAt": "2026-05-11T10:00:00.000Z",
-    "updatedAt": "2026-05-11T10:00:00.000Z"
+  "data": {
+    "family": {
+      "familyCode": "fam_xxx",
+      "familyName": "默认家庭",
+      "createdByDeviceId": "dev_xxx"
+    },
+    "familySecret": "家庭密钥，只返回一次",
+    "member": {
+      "memberCode": "dev_xxx",
+      "familyCode": "fam_xxx",
+      "deviceId": "dev_xxx",
+      "role": "owner",
+      "joinedFamily": true
+    },
+    "invite": {
+      "familyCode": "fam_xxx",
+      "inviteCode": "123456",
+      "expiresAt": "2026-05-12T07:28:49.000Z"
+    }
   }
 }
 ```
 
-## 查询家庭
+`familyCode` 由后端生成，前端不再自定义。
 
-### 接口地址
+## 创建邀请码
 
 ```text
-GET /api/getFamily?familyCode=default_family
+POST /api/createFamilyInvite
 ```
 
-### 请求参数示例
+请求：
 
 ```json
 {
-  "familyCode": "default_family"
+  "familyCode": "fam_xxx",
+  "ttlMinutes": 60
 }
 ```
 
-### 返回参数示例
+返回：
 
 ```json
 {
-  "code": 200,
-  "res": {
-    "id": 1,
-    "familyCode": "default_family",
-    "familyName": "默认家庭",
-    "isDeleted": false,
-    "createdAt": "2026-05-11T10:00:00.000Z",
-    "updatedAt": "2026-05-11T10:00:00.000Z"
+  "data": {
+    "familyCode": "fam_xxx",
+    "inviteCode": "123456",
+    "expiresAt": "2026-05-12T07:28:49.000Z"
   }
 }
 ```
 
-## 修改家庭
-
-### 接口地址
+## 加入家庭
 
 ```text
+POST /api/joinFamily
+```
+
+请求：
+
+```json
+{
+  "inviteCode": "123456"
+}
+```
+
+返回当前设备在家庭中的成员关系。
+
+邀请码在过期前可重复使用，适合一次分享给多个家庭成员。
+
+## 查询/修改/删除家庭
+
+这些接口仍使用 `familyCode` 定位家庭，但必须带设备凭证，且设备必须已加入该家庭：
+
+```text
+GET /api/getFamily?familyCode=fam_xxx
 POST /api/updateFamily
-```
-
-### 请求参数示例
-
-```json
-{
-  "familyCode": "default_family",
-  "familyName": "新的家庭名"
-}
-```
-
-### 返回参数示例
-
-```json
-{
-  "code": 200,
-  "res": {
-    "id": 1,
-    "familyCode": "default_family",
-    "familyName": "新的家庭名",
-    "isDeleted": false,
-    "createdAt": "2026-05-11T10:00:00.000Z",
-    "updatedAt": "2026-05-11T10:10:00.000Z"
-  }
-}
-```
-
-## 删除家庭
-
-### 接口地址
-
-```text
 POST /api/deleteFamily
-```
-
-### 请求参数示例
-
-```json
-{
-  "familyCode": "default_family"
-}
-```
-
-### 返回参数示例
-
-```json
-{
-  "code": 200,
-  "res": {
-    "id": 1,
-    "familyCode": "default_family",
-    "familyName": "默认家庭",
-    "isDeleted": true,
-    "createdAt": "2026-05-11T10:00:00.000Z",
-    "updatedAt": "2026-05-11T10:20:00.000Z"
-  }
-}
+GET /api/getFamilyMembers?familyCode=fam_xxx
 ```

@@ -172,6 +172,21 @@ function createFamilyItemCollectionService({ tableName }) {
     };
   }
 
+  async function upsertItemByDevice(deviceId, familyCode, itemJson) {
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode);
+
+    if (!member) {
+      return null;
+    }
+
+    const item = await upsertItem(member.familyCode, member.memberCode, itemJson);
+
+    return {
+      member,
+      item
+    };
+  }
+
   async function getItemByFamily(familyCode, itemId) {
     if (env.useMockDb) {
       return toItem(mockItems.get(getMockKey(familyCode, itemId)));
@@ -189,6 +204,21 @@ function createFamilyItemCollectionService({ tableName }) {
 
   async function getItemByMember(memberCode, itemId) {
     const member = await familyRecipeService.getFamilyMemberByCode(memberCode);
+
+    if (!member) {
+      return null;
+    }
+
+    const item = await getItemByFamily(member.familyCode, itemId);
+
+    return {
+      member,
+      item
+    };
+  }
+
+  async function getItemByDevice(deviceId, itemId) {
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
 
     if (!member) {
       return null;
@@ -244,6 +274,21 @@ function createFamilyItemCollectionService({ tableName }) {
     };
   }
 
+  async function listItemsByDevice(deviceId, options = {}) {
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+
+    if (!member) {
+      return null;
+    }
+
+    const items = await listItemsByFamily(member.familyCode, options);
+
+    return {
+      member,
+      items
+    };
+  }
+
   async function getChangesByMember(memberCode, since) {
     // 增量同步：客户端保存上次拿到的 serverTime，下次作为 since 传回来。
     // 服务端返回 since 之后更新过的条目，包括软删除条目。
@@ -283,6 +328,16 @@ function createFamilyItemCollectionService({ tableName }) {
       items: rows.map(toItem),
       serverTime: Date.now()
     };
+  }
+
+  async function getChangesByDevice(deviceId, since) {
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+
+    if (!member) {
+      return null;
+    }
+
+    return getChangesByFamily(member.familyCode, since);
   }
 
   async function getChangesByFamily(familyCode, since) {
@@ -400,16 +455,40 @@ function createFamilyItemCollectionService({ tableName }) {
     };
   }
 
+  async function deleteItemByDevice(deviceId, itemId) {
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+
+    if (!member) {
+      return null;
+    }
+
+    const item = await deleteItemByFamily(member.familyCode, itemId, member.memberCode);
+
+    if (!item) {
+      throw createNotFoundError('item not found');
+    }
+
+    return {
+      member,
+      item
+    };
+  }
+
   return {
     upsertItemByMember,
+    upsertItemByDevice,
     getItemByFamily,
     getItemByMember,
+    getItemByDevice,
     listItemsByFamily,
     listItemsByMember,
+    listItemsByDevice,
     getChangesByMember,
+    getChangesByDevice,
     getChangesByFamily,
     deleteItemByFamily,
-    deleteItemByMember
+    deleteItemByMember,
+    deleteItemByDevice
   };
 }
 

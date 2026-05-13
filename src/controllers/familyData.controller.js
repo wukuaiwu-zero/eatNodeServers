@@ -1,42 +1,18 @@
 const familyRecipeService = require('../services/familyRecipe.service');
 const familyShoppingService = require('../services/familyShopping.service');
 const familyIngredientService = require('../services/familyIngredient.service');
-
-const MEMBER_CODE_MAX_LENGTH = 100;
+const deviceService = require('../services/device.service');
+const { getDeviceCredentials } = require('../utils/request');
 
 // 聚合接口给前端做“进入应用后一把拉齐数据”用。
-// 它不负责写入，只负责根据 memberCode 找到家庭，再把家庭菜谱、购物清单、食材库拼成一个响应。
-
-function normalizeText(value) {
-  return typeof value === 'string' ? value.trim() : '';
-}
-
-function getInput(req, key) {
-  return req.body?.[key] ?? req.query?.[key] ?? req.params?.[key];
-}
-
-function validateMemberCode(memberCode) {
-  if (!memberCode) {
-    return 'memberCode is required';
-  }
-
-  if (memberCode.length > MEMBER_CODE_MAX_LENGTH) {
-    return `memberCode must be ${MEMBER_CODE_MAX_LENGTH} characters or fewer`;
-  }
-
-  return null;
-}
+// 它不负责写入，只根据匿名设备身份找到家庭，再拼出家庭菜谱、购物清单、食材库。
 
 async function getFamilyJsonData(req, res, next) {
   try {
-    const memberCode = normalizeText(getInput(req, 'memberCode') || getInput(req, 'membercode'));
-    const memberCodeError = validateMemberCode(memberCode);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
-    if (memberCodeError) {
-      return res.status(400).json({ message: memberCodeError });
-    }
-
-    const member = await familyRecipeService.getFamilyMemberByCode(memberCode);
+    const member = await familyRecipeService.getFamilyMemberByDevice(device.deviceId);
 
     if (!member) {
       // 这里返回 404 的原因通常是数据库里还没有 family_members 记录。

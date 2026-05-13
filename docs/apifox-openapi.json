@@ -1,0 +1,1307 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "家庭厨房 Node API",
+    "version": "1.0.0",
+    "description": "Apifox 导入用接口文件。除注册设备接口外，其余接口通常需要 X-Device-Id 和 X-Device-Secret 请求头。"
+  },
+  "servers": [
+    {
+      "url": "http://lw.fyaigpt.cyou",
+      "description": "线上 Nginx 域名"
+    },
+    {
+      "url": "http://127.0.0.1:3000",
+      "description": "本地开发服务"
+    }
+  ],
+  "tags": [
+    {
+      "name": "设备"
+    },
+    {
+      "name": "家庭"
+    },
+    {
+      "name": "家庭成员"
+    },
+    {
+      "name": "家庭菜谱"
+    },
+    {
+      "name": "购物清单"
+    },
+    {
+      "name": "食材库"
+    },
+    {
+      "name": "聚合数据"
+    }
+  ],
+  "paths": {
+    "/api/registerDevice": {
+      "post": {
+        "tags": [
+          "设备"
+        ],
+        "summary": "注册匿名设备",
+        "description": "请求体可为空。服务端会生成或复用设备 ID 和密钥。",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDeviceRequest"
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "注册成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceResponse"
+                },
+                "example": {
+                  "data": {
+                    "device": {
+                      "deviceId": "dev_abc"
+                    },
+                    "deviceSecret": "只返回一次的密钥"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/createFamily": {
+      "post": {
+        "tags": [
+          "家庭"
+        ],
+        "summary": "创建家庭",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFamilyRequest"
+              },
+              "example": {
+                "familyName": "苏明明的厨房"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateFamilyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/getFamily": {
+      "get": {
+        "tags": [
+          "家庭"
+        ],
+        "summary": "查询家庭",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FamilyCodeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/updateFamily": {
+      "post": {
+        "tags": [
+          "家庭"
+        ],
+        "summary": "修改家庭",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFamilyRequest"
+              },
+              "example": {
+                "familyCode": "fam_xxx",
+                "familyName": "新的家庭名"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "修改成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/deleteFamily": {
+      "post": {
+        "tags": [
+          "家庭"
+        ],
+        "summary": "删除家庭",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FamilyCodeBody"
+              },
+              "example": {
+                "familyCode": "fam_xxx"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/api/createFamilyInvite": {
+      "post": {
+        "tags": [
+          "家庭"
+        ],
+        "summary": "创建家庭邀请码",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFamilyInviteRequest"
+              },
+              "example": {
+                "familyCode": "fam_xxx",
+                "ttlMinutes": 60
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/joinFamily": {
+      "post": {
+        "tags": [
+          "家庭成员"
+        ],
+        "summary": "通过邀请码加入家庭",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinFamilyRequest"
+              },
+              "example": {
+                "inviteCode": "123456"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "加入成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyMembers": {
+      "get": {
+        "tags": [
+          "家庭成员"
+        ],
+        "summary": "查询家庭成员",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FamilyCodeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/saveFamilyRecipe": {
+      "post": {
+        "tags": [
+          "家庭菜谱"
+        ],
+        "summary": "保存家庭菜谱",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveFamilyRecipeRequest"
+              },
+              "example": {
+                "familyCode": "fam_xxx",
+                "recipeJson": {
+                  "recipes": [
+                    {
+                      "id": "recipe_tomato_egg",
+                      "name": "番茄炒蛋"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "保存成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyRecipeByMember": {
+      "get": {
+        "tags": [
+          "家庭菜谱"
+        ],
+        "summary": "查询当前设备家庭菜谱",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyRecipe": {
+      "get": {
+        "tags": [
+          "家庭菜谱"
+        ],
+        "summary": "按家庭查询菜谱",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/FamilyCodeQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/saveFamilyShoppingItem": {
+      "post": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "保存购物清单条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveShoppingItemRequest"
+              },
+              "example": {
+                "familyCode": "fam_xxx",
+                "shoppingItemJson": {
+                  "id": "shop_tomato",
+                  "name": "番茄",
+                  "num": "3个",
+                  "category": "蔬菜",
+                  "price": "6",
+                  "done": false
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "保存成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyShoppingItem": {
+      "get": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "查询单条购物清单",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ItemIdQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyShoppingItems": {
+      "get": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "查询购物清单列表",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyShoppingChanges": {
+      "get": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "查询购物清单增量",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SinceQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionChangesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deleteFamilyShoppingItem": {
+      "post": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "删除购物清单条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteItemRequest"
+              },
+              "example": {
+                "id": "shop_tomato"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/saveFamilyIngredientItem": {
+      "post": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "保存食材库条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveIngredientItemRequest"
+              },
+              "example": {
+                "familyCode": "fam_xxx",
+                "ingredientItemJson": {
+                  "id": "ingredient_rice",
+                  "name": "大米",
+                  "num": "5kg",
+                  "category": "主食",
+                  "price": "35",
+                  "done": false
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "保存成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyIngredientItem": {
+      "get": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "查询单条食材",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ItemIdQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyIngredientItems": {
+      "get": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "查询食材库列表",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyIngredientChanges": {
+      "get": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "查询食材库增量",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SinceQuery"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionChangesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deleteFamilyIngredientItem": {
+      "post": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "删除食材库条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteItemRequest"
+              },
+              "example": {
+                "id": "ingredient_rice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/getFamilyData": {
+      "get": {
+        "tags": [
+          "聚合数据"
+        ],
+        "summary": "查询家庭聚合数据",
+        "description": "一次返回当前设备所属家庭的菜谱、购物清单和食材库。",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "查询成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FamilyDataResponse"
+                },
+                "example": {
+                  "data": {
+                    "familyRecipe": {
+                      "recipes": []
+                    },
+                    "shoppingList": [],
+                    "ingredientLibrary": []
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "deviceAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Device-Id",
+        "description": "接口还需要同时传 X-Device-Secret。Apifox 中可在全局 Header 再配置 X-Device-Secret。"
+      }
+    },
+    "parameters": {
+      "FamilyCodeQuery": {
+        "name": "familyCode",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "example": "fam_xxx"
+        }
+      },
+      "ItemIdQuery": {
+        "name": "id",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "example": "shop_tomato"
+        }
+      },
+      "SinceQuery": {
+        "name": "since",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer",
+          "format": "int64",
+          "default": 0,
+          "example": 0
+        }
+      }
+    },
+    "responses": {
+      "ErrorResponse": {
+        "description": "错误响应",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "message": "familyCode is required"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "RegisterDeviceRequest": {
+        "type": "object",
+        "properties": {
+          "deviceId": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "dev_abc"
+          },
+          "deviceSecret": {
+            "type": "string",
+            "maxLength": 200,
+            "example": "设备密钥"
+          }
+        }
+      },
+      "CreateFamilyRequest": {
+        "type": "object",
+        "properties": {
+          "familyName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "example": "苏明明的厨房"
+          }
+        }
+      },
+      "UpdateFamilyRequest": {
+        "type": "object",
+        "required": [
+          "familyCode"
+        ],
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "fam_xxx"
+          },
+          "familyName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "example": "新的家庭名"
+          }
+        }
+      },
+      "FamilyCodeBody": {
+        "type": "object",
+        "required": [
+          "familyCode"
+        ],
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "fam_xxx"
+          }
+        }
+      },
+      "CreateFamilyInviteRequest": {
+        "type": "object",
+        "required": [
+          "familyCode"
+        ],
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "example": "fam_xxx"
+          },
+          "ttlMinutes": {
+            "type": "integer",
+            "default": 60,
+            "example": 60
+          }
+        }
+      },
+      "JoinFamilyRequest": {
+        "type": "object",
+        "required": [
+          "inviteCode"
+        ],
+        "properties": {
+          "inviteCode": {
+            "type": "string",
+            "example": "123456"
+          }
+        }
+      },
+      "SaveFamilyRecipeRequest": {
+        "type": "object",
+        "required": [
+          "familyCode",
+          "recipeJson"
+        ],
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "example": "fam_xxx"
+          },
+          "recipeJson": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "recipes": []
+            }
+          }
+        }
+      },
+      "SaveShoppingItemRequest": {
+        "type": "object",
+        "required": [
+          "familyCode",
+          "shoppingItemJson"
+        ],
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "example": "fam_xxx"
+          },
+          "shoppingItemJson": {
+            "$ref": "#/components/schemas/CollectionItem"
+          }
+        }
+      },
+      "SaveIngredientItemRequest": {
+        "type": "object",
+        "required": [
+          "familyCode",
+          "ingredientItemJson"
+        ],
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "example": "fam_xxx"
+          },
+          "ingredientItemJson": {
+            "$ref": "#/components/schemas/CollectionItem"
+          }
+        }
+      },
+      "DeleteItemRequest": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "shop_tomato"
+          }
+        }
+      },
+      "Family": {
+        "type": "object",
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "example": "fam_xxx"
+          },
+          "familyName": {
+            "type": "string",
+            "nullable": true,
+            "example": "苏明明的厨房"
+          },
+          "createdByDeviceId": {
+            "type": "string",
+            "example": "dev_abc"
+          }
+        },
+        "additionalProperties": true
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "memberCode": {
+            "type": "string",
+            "example": "dev_abc"
+          },
+          "familyCode": {
+            "type": "string",
+            "example": "fam_xxx"
+          },
+          "deviceId": {
+            "type": "string",
+            "example": "dev_abc"
+          },
+          "role": {
+            "type": "string",
+            "example": "owner"
+          },
+          "joinedFamily": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "additionalProperties": true
+      },
+      "Invite": {
+        "type": "object",
+        "properties": {
+          "familyCode": {
+            "type": "string",
+            "example": "fam_xxx"
+          },
+          "inviteCode": {
+            "type": "string",
+            "example": "123456"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-05-12T07:28:49.000Z"
+          }
+        },
+        "additionalProperties": true
+      },
+      "CollectionItem": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "shop_tomato"
+          },
+          "name": {
+            "type": "string",
+            "example": "番茄"
+          },
+          "num": {
+            "type": "string",
+            "example": "3个"
+          },
+          "category": {
+            "type": "string",
+            "example": "蔬菜"
+          },
+          "price": {
+            "type": "string",
+            "example": "6"
+          },
+          "done": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "additionalProperties": true
+      },
+      "DeviceResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "device": {
+                "type": "object",
+                "properties": {
+                  "deviceId": {
+                    "type": "string",
+                    "example": "dev_abc"
+                  }
+                },
+                "additionalProperties": true
+              },
+              "deviceSecret": {
+                "type": "string",
+                "example": "只返回一次的密钥"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "CreateFamilyResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "family": {
+                "$ref": "#/components/schemas/Family"
+              },
+              "familySecret": {
+                "type": "string",
+                "example": "家庭密钥，只返回一次"
+              },
+              "member": {
+                "$ref": "#/components/schemas/Member"
+              },
+              "invite": {
+                "$ref": "#/components/schemas/Invite"
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "FamilyResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Family"
+          }
+        }
+      },
+      "InviteResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Invite"
+          }
+        }
+      },
+      "MemberResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Member"
+          }
+        }
+      },
+      "MembersResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Member"
+            }
+          }
+        }
+      },
+      "CollectionChangesResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "familyCode": {
+                "type": "string",
+                "example": "fam_xxx"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CollectionItem"
+                }
+              },
+              "serverTime": {
+                "type": "integer",
+                "format": "int64",
+                "example": 1778482043966
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "FamilyDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "familyRecipe": {
+                "type": "object",
+                "nullable": true,
+                "additionalProperties": true
+              },
+              "shoppingList": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CollectionItem"
+                }
+              },
+              "ingredientLibrary": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CollectionItem"
+                }
+              }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "GenericDataResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": true
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            ]
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "example": "familyCode is required"
+          }
+        }
+      }
+    }
+  }
+}

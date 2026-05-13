@@ -5,11 +5,15 @@ async function request(path, options = {}) {
   const url = `${baseUrl}${path}${query}`;
   const response = await fetch(url, {
     method: options.method || 'GET',
-    headers: options.body
-      ? {
-          'Content-Type': 'application/json'
-        }
-      : undefined,
+    headers: {
+      ...(options.device
+        ? {
+            'X-Device-Id': options.device.deviceId,
+            'X-Device-Secret': options.device.deviceSecret
+          }
+        : {}),
+      ...(options.body ? { 'Content-Type': 'application/json' } : {})
+    },
     body: options.body ? JSON.stringify(options.body) : undefined
   });
   const text = await response.text();
@@ -21,6 +25,10 @@ async function request(path, options = {}) {
     // Keep non-JSON responses readable in the console.
   }
 
+  if (!response.ok) {
+    throw new Error(`${response.status} ${url}: ${JSON.stringify(body)}`);
+  }
+
   return {
     method: options.method || 'GET',
     url,
@@ -30,17 +38,41 @@ async function request(path, options = {}) {
   };
 }
 
+async function registerDevice() {
+  const result = await request('/api/registerDevice', {
+    method: 'POST',
+    body: {}
+  });
+
+  return {
+    deviceId: result.body.data.device.deviceId,
+    deviceSecret: result.body.data.deviceSecret
+  };
+}
+
 async function main() {
-  const familyCode = `DEMO_${Date.now()}`;
-  const memberCode = `MEMBER_${Date.now()}`;
+  const ownerDevice = await registerDevice();
+  const memberDevice = await registerDevice();
   const results = [];
 
+  const familyResult = await request('/api/createFamily', {
+    method: 'POST',
+    device: ownerDevice,
+    body: {
+      familyName: 'Demo 家庭'
+    }
+  });
+  results.push(familyResult);
+
+  const familyCode = familyResult.body.data.family.familyCode;
+  const inviteCode = familyResult.body.data.invite.inviteCode;
+
   results.push(
-    await request('/api/createFamily', {
+    await request('/api/joinFamily', {
       method: 'POST',
+      device: memberDevice,
       body: {
-        familyCode,
-        familyName: 'Demo 家庭'
+        inviteCode
       }
     })
   );
@@ -48,8 +80,8 @@ async function main() {
   results.push(
     await request('/api/saveFamilyRecipe', {
       method: 'POST',
+      device: ownerDevice,
       body: {
-        memberCode,
         familyCode,
         recipeJson: {
           recipes: [
@@ -63,10 +95,26 @@ async function main() {
   );
 
   results.push(
-    await request('/api/getFamilyData', {
-      query: {
-        memberCode
+    await request('/api/saveFamilyShoppingItem', {
+      method: 'POST',
+      device: memberDevice,
+      body: {
+        familyCode,
+        shoppingItemJson: {
+          name: '番茄',
+          num: '3个',
+          category: '蔬菜',
+          price: '6',
+          done: false,
+          id: `shop_${Date.now()}`
+        }
       }
+    })
+  );
+
+  results.push(
+    await request('/api/getFamilyData', {
+      device: memberDevice
     })
   );
 

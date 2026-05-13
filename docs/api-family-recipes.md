@@ -1,23 +1,23 @@
-# family_recipes 家庭菜谱表接口
+# family_recipes 家庭菜谱接口
 
-## 表说明
+`family_recipes` 当前按家庭存一整份 `recipe_json`。所有接口都需要设备请求头：
 
-`family_recipes` 当前按家庭存一整份 `recipe_json`。同一个 `family_code` 再次上传会覆盖旧 JSON。
+```text
+X-Device-Id: dev_xxx
+X-Device-Secret: 设备密钥
+```
 
 ## 保存家庭菜谱
-
-### 接口地址
 
 ```text
 POST /api/saveFamilyRecipe
 ```
 
-### 请求参数示例
+请求：
 
 ```json
 {
-  "memberCode": "member_a",
-  "familyCode": "default_family",
+  "familyCode": "fam_xxx",
   "recipeJson": {
     "recipes": [
       {
@@ -29,101 +29,20 @@ POST /api/saveFamilyRecipe
 }
 ```
 
-### 返回参数示例
+设备必须已加入 `familyCode` 对应家庭。
 
-```json
-{
-  "code": 200,
-  "res": {
-    "member": {
-      "memberCode": "member_a",
-      "familyCode": "default_family",
-      "joinedFamily": false
-    },
-    "recipe": {
-      "id": 1,
-      "familyCode": "default_family",
-      "recipeJson": {
-        "recipes": [
-          {
-            "id": "recipe_tomato_egg",
-            "name": "番茄炒蛋"
-          }
-        ]
-      },
-      "createdAt": "2026-05-11T10:00:00.000Z",
-      "updatedAt": "2026-05-11T10:00:00.000Z"
-    }
-  }
-}
-```
-
-## 按成员查询家庭菜谱
-
-### 接口地址
+## 查询当前设备家庭菜谱
 
 ```text
-GET /api/getFamilyRecipeByMember?memberCode=member_a
+GET /api/getFamilyRecipeByMember
 ```
 
-### 请求参数示例
-
-```json
-{
-  "memberCode": "member_a"
-}
-```
-
-### 返回参数示例
-
-```json
-{
-  "code": 200,
-  "res": {
-    "member": {
-      "memberCode": "member_a",
-      "familyCode": "default_family",
-      "joinedFamily": true
-    },
-    "recipe": {
-      "familyCode": "default_family",
-      "recipeJson": {
-        "recipes": []
-      }
-    }
-  }
-}
-```
+接口名保留历史命名，但现在按设备凭证找家庭，不再需要 `memberCode`。
 
 ## 按家庭查询菜谱
 
-### 接口地址
-
 ```text
-GET /api/getFamilyRecipe?familyCode=default_family
+GET /api/getFamilyRecipe?familyCode=fam_xxx
 ```
 
-### 请求参数示例
-
-```json
-{
-  "familyCode": "default_family"
-}
-```
-
-### 返回参数示例
-
-```json
-{
-  "code": 200,
-  "res": {
-    "id": 1,
-    "familyCode": "default_family",
-    "recipeJson": {
-      "recipes": []
-    },
-    "createdAt": "2026-05-11T10:00:00.000Z",
-    "updatedAt": "2026-05-11T10:00:00.000Z"
-  }
-}
-```
+设备必须已加入该家庭。

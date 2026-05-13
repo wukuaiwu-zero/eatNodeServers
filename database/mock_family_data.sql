@@ -6,24 +6,38 @@ USE node_servers;
 -- 它可以重复执行：下面大量使用 ON DUPLICATE KEY UPDATE，
 -- 已存在的数据会被更新，不会因为唯一键冲突中断。
 
--- 1. 准备一个默认家庭。family_code 是后续所有共享数据的关联主键。
-INSERT INTO families (family_code, family_name, is_deleted)
-VALUES ('default_family', '默认家庭', 0)
+-- 1. 准备一个默认匿名设备。演示请求可使用：
+-- X-Device-Id: demo_device
+-- X-Device-Secret: demo_secret
+INSERT INTO devices (device_id, device_secret_hash, last_seen_at)
+VALUES (
+  'demo_device',
+  'demo_salt_1234567:6fd0a893dc2d9f0dd5ae90a6197e5fad33cf8264511f9f9ac12a4e2b3bd65cfc',
+  CURRENT_TIMESTAMP
+)
+ON DUPLICATE KEY UPDATE
+  last_seen_at = CURRENT_TIMESTAMP;
+
+-- 2. 准备一个默认家庭。family_code 是后续所有共享数据的关联主键。
+INSERT INTO families (family_code, family_name, is_deleted, created_by_device_id)
+VALUES ('default_family', '默认家庭', 0, 'demo_device')
 ON DUPLICATE KEY UPDATE
   family_name = VALUES(family_name),
-  is_deleted = 0;
+  is_deleted = 0,
+  created_by_device_id = VALUES(created_by_device_id);
 
--- 2. 准备两个家庭成员。聚合接口 /api/family-data/member/member_a
--- 会先从 family_members 查 member_a 属于哪个家庭，再读取这个家庭的数据。
-INSERT INTO family_members (member_code, family_code, joined_family)
+-- 3. 准备默认家庭成员。聚合接口会通过设备身份找到家庭，再读取家庭数据。
+INSERT INTO family_members (member_code, family_code, device_id, role, joined_family)
 VALUES
-  ('member_a', 'default_family', 1),
-  ('member_b', 'default_family', 1)
+  ('demo_device', 'default_family', 'demo_device', 'owner', 1)
 ON DUPLICATE KEY UPDATE
   family_code = VALUES(family_code),
-  joined_family = VALUES(joined_family);
+  device_id = VALUES(device_id),
+  role = VALUES(role),
+  joined_family = VALUES(joined_family),
+  revoked_at = NULL;
 
--- 3. 菜谱当前按“家庭 -> 一整份 JSON”存储，所以 family_recipes 每个家庭只有一行。
+-- 4. 菜谱当前按“家庭 -> 一整份 JSON”存储，所以 family_recipes 每个家庭只有一行。
 INSERT INTO family_recipes (family_code, recipe_json)
 VALUES (
   'default_family',
@@ -57,7 +71,7 @@ ON DUPLICATE KEY UPDATE
   recipe_json = VALUES(recipe_json),
   updated_at = CURRENT_TIMESTAMP;
 
--- 4. 购物清单按 item 存储。item_json 保留前端原始字段，
+-- 5. 购物清单按 item 存储。item_json 保留前端原始字段，
 -- item_id / family_code / version / deleted_at 则服务于后端同步逻辑。
 INSERT INTO family_shopping_items
   (item_id, family_code, item_json, create_time, created_by, updated_by, version, deleted_at)
@@ -77,8 +91,8 @@ VALUES
       'id', 'shop_tomato'
     ),
     1778294348928,
-    'member_a',
-    'member_a',
+    'demo_device',
+    'demo_device',
     1,
     NULL
   ),
@@ -97,8 +111,8 @@ VALUES
       'id', 'shop_egg'
     ),
     1778294358928,
-    'member_a',
-    'member_b',
+    'demo_device',
+    'demo_device',
     1,
     NULL
   )
@@ -110,7 +124,7 @@ ON DUPLICATE KEY UPDATE
   deleted_at = NULL,
   updated_at = CURRENT_TIMESTAMP;
 
--- 5. 食材库和购物清单字段目前相同，但单独放在 family_ingredient_items。
+-- 6. 食材库和购物清单字段目前相同，但单独放在 family_ingredient_items。
 -- 这样以后比如食材库要加保质期、库存预警，不会影响购物清单。
 INSERT INTO family_ingredient_items
   (item_id, family_code, item_json, create_time, created_by, updated_by, version, deleted_at)
@@ -130,8 +144,8 @@ VALUES
       'id', 'ingredient_rice'
     ),
     1778294368928,
-    'member_a',
-    'member_a',
+    'demo_device',
+    'demo_device',
     1,
     NULL
   ),
@@ -150,8 +164,8 @@ VALUES
       'id', 'ingredient_garlic'
     ),
     1778294378928,
-    'member_b',
-    'member_b',
+    'demo_device',
+    'demo_device',
     1,
     NULL
   )
