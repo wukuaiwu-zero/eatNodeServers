@@ -15,11 +15,11 @@ function getInput(req, key) {
 
 function validateFamilyCode(familyCode) {
   if (!familyCode) {
-    return 'familyCode is required';
+    return '请选择家庭';
   }
 
   if (familyCode.length > FAMILY_CODE_MAX_LENGTH) {
-    return `familyCode must be ${FAMILY_CODE_MAX_LENGTH} characters or fewer`;
+    return `家庭码太长了，不能超过 ${FAMILY_CODE_MAX_LENGTH} 个字符`;
   }
 
   return null;
@@ -37,7 +37,7 @@ async function uploadFamilyRecipe(req, res, next) {
     }
 
     if (req.body.recipeJson === undefined || req.body.recipeJson === null) {
-      return res.status(400).json({ message: 'recipeJson is required' });
+      return res.status(400).json({ message: '请填写家庭菜谱数据' });
     }
 
     const data = await familyRecipeService.upsertFamilyRecipeByDevice(
@@ -48,7 +48,7 @@ async function uploadFamilyRecipe(req, res, next) {
     return res.json({ data });
   } catch (error) {
     if (error instanceof SyntaxError) {
-      return res.status(400).json({ message: 'recipeJson must be valid JSON' });
+      return res.status(400).json({ message: '菜谱数据格式不正确' });
     }
 
     return next(error);
@@ -62,7 +62,7 @@ async function joinFamily(req, res, next) {
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
     if (!inviteCode) {
-      return res.status(400).json({ message: 'inviteCode is required' });
+      return res.status(400).json({ message: '请输入邀请码' });
     }
 
     const member = await familyRecipeService.joinFamilyByInvite(device.deviceId, inviteCode);
@@ -80,11 +80,11 @@ async function getFamilyRecipeByMember(req, res, next) {
     const data = await familyRecipeService.getFamilyRecipeByDevice(device.deviceId);
 
     if (!data) {
-      return res.status(404).json({ message: 'Family member not found' });
+      return res.status(404).json({ message: '家庭成员不存在' });
     }
 
     if (!data.recipe) {
-      return res.status(404).json({ message: 'Family recipe not found' });
+      return res.status(404).json({ message: '家庭菜谱不存在' });
     }
 
     return res.json({ data });
@@ -109,7 +109,7 @@ async function getFamilyRecipe(req, res, next) {
     const recipe = await familyRecipeService.getFamilyRecipeByCode(familyCode);
 
     if (!recipe) {
-      return res.status(404).json({ message: 'Family recipe not found' });
+      return res.status(404).json({ message: '家庭菜谱不存在' });
     }
 
     return res.json({ data: recipe });

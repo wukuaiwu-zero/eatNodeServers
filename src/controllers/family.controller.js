@@ -25,11 +25,11 @@ function normalizeNullableText(value) {
 
 function validateFamilyCode(familyCode) {
   if (!familyCode) {
-    return 'familyCode is required';
+    return '请选择家庭';
   }
 
   if (familyCode.length > FAMILY_CODE_MAX_LENGTH) {
-    return `familyCode must be ${FAMILY_CODE_MAX_LENGTH} characters or fewer`;
+    return `家庭码太长了，不能超过 ${FAMILY_CODE_MAX_LENGTH} 个字符`;
   }
 
   return null;
@@ -37,7 +37,7 @@ function validateFamilyCode(familyCode) {
 
 function validateFamilyName(familyName) {
   if (familyName && familyName.length > FAMILY_NAME_MAX_LENGTH) {
-    return `familyName must be ${FAMILY_NAME_MAX_LENGTH} characters or fewer`;
+    return `家庭名称太长了，不能超过 ${FAMILY_NAME_MAX_LENGTH} 个字符`;
   }
 
   return null;
@@ -86,7 +86,7 @@ async function getFamily(req, res, next) {
     const family = await familyService.getFamilyByCode(familyCode);
 
     if (!family) {
-      return res.status(404).json({ message: 'Family not found' });
+      return res.status(404).json({ message: '家庭不存在' });
     }
 
     return res.json({ data: family });
@@ -117,7 +117,7 @@ async function updateFamily(req, res, next) {
     const family = await familyService.updateFamily(familyCode, familyName);
 
     if (!family) {
-      return res.status(404).json({ message: 'Family not found' });
+      return res.status(404).json({ message: '家庭不存在' });
     }
 
     return res.json({ data: family });
@@ -142,7 +142,7 @@ async function deleteFamily(req, res, next) {
     const family = await familyService.deleteFamily(familyCode);
 
     if (!family) {
-      return res.status(404).json({ message: 'Family not found' });
+      return res.status(404).json({ message: '家庭不存在' });
     }
 
     return res.json({ data: family });
@@ -163,7 +163,7 @@ async function listFamilyMembers(req, res, next) {
     const family = await familyService.getFamilyByCode(familyCode);
 
     if (!family) {
-      return res.status(404).json({ message: 'Family not found' });
+      return res.status(404).json({ message: '家庭不存在' });
     }
 
     const { deviceId, deviceSecret } = getDeviceCredentials(req);

@@ -36,18 +36,18 @@ function normalizeItem(itemJson, familyCode) {
   // - 前端传 JSON 字符串
   // 统一成对象后，后面的存储逻辑就不用关心来源格式。
   if (itemJson === undefined || itemJson === null) {
-    throw new TypeError('itemJson is required');
+    throw new TypeError('请填写条目数据');
   }
 
   const item = typeof itemJson === 'string' ? JSON.parse(itemJson) : { ...itemJson };
 
   if (!item || typeof item !== 'object' || Array.isArray(item)) {
-    throw new TypeError('itemJson must be an object');
+    throw new TypeError('条目数据格式不正确');
   }
   const itemId = String(item.id || item._id || createItemId()).trim();
 
   if (!itemId) {
-    throw new TypeError('item id is required');
+    throw new TypeError('条目 id 不能为空');
   }
 
   // create_time 继续沿用客户端已有字段，方便和现有小程序/前端数据结构对齐。
@@ -446,7 +446,7 @@ function createFamilyItemCollectionService({ tableName }) {
     const item = await getItemByFamily(member.familyCode, itemId);
 
     if (!item) {
-      throw createNotFoundError('item not found');
+      throw createNotFoundError('条目不存在');
     }
 
     return {
@@ -465,7 +465,7 @@ function createFamilyItemCollectionService({ tableName }) {
     const item = await deleteItemByFamily(member.familyCode, itemId, member.memberCode);
 
     if (!item) {
-      throw createNotFoundError('item not found');
+      throw createNotFoundError('条目不存在');
     }
 
     return {

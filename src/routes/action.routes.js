@@ -13,19 +13,19 @@ const deviceLimiter = createRateLimiter({
   keyPrefix: 'device',
   windowMs: 60 * 60 * 1000,
   max: 20,
-  message: 'too many device requests'
+  message: '设备相关请求太频繁，请稍后再试'
 });
 const familyLimiter = createRateLimiter({
   keyPrefix: 'family',
-  windowMs: 60 * 60 * 1000,
-  max: 10,
-  message: 'too many family requests'
+  windowMs: 10 * 60 * 1000,
+  max: 1000,
+  message: '家庭相关请求太频繁，请稍后再试'
 });
 const writeLimiter = createRateLimiter({
   keyPrefix: 'write',
   windowMs: 60 * 1000,
   max: 120,
-  message: 'too many write requests'
+  message: '写入请求太频繁，请稍后再试'
 });
 
 router.post('/registerDevice', deviceLimiter, deviceController.registerDevice);

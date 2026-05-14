@@ -4,7 +4,7 @@ const { env } = require('../config/env');
 
 const mockDevices = new Map();
 
-function createAuthError(message = 'invalid device credentials') {
+function createAuthError(message = '设备身份校验失败，请重新注册设备或检查设备密钥') {
   const error = new Error(message);
   error.statusCode = 401;
   return error;
@@ -117,7 +117,7 @@ async function getDeviceById(deviceId) {
 
 async function authenticateDevice(deviceId, deviceSecret) {
   if (!deviceId || !deviceSecret) {
-    throw createAuthError('deviceId and deviceSecret are required');
+    throw createAuthError('请先注册设备，再访问这个接口');
   }
 
   if (env.useMockDb) {

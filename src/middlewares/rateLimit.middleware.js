@@ -1,7 +1,7 @@
 function createRateLimiter(options = {}) {
   const windowMs = options.windowMs || 60 * 1000;
   const max = options.max || 60;
-  const message = options.message || 'too many requests';
+  const message = options.message || '请求太频繁，请稍后再试';
   const buckets = new Map();
 
   return function rateLimit(req, res, next) {

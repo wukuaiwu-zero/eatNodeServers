@@ -20,17 +20,31 @@ function getInput(req, key) {
 
 function validateText(value, fieldName, maxLength) {
   if (!value) {
-    return `${fieldName} is required`;
+    return `请填写${fieldName}`;
   }
 
   if (value.length > maxLength) {
-    return `${fieldName} must be ${maxLength} characters or fewer`;
+    return `${fieldName}太长了，不能超过 ${maxLength} 个字符`;
   }
 
   return null;
 }
 
+function getItemLabel(itemFieldName) {
+  if (itemFieldName === 'shoppingItemJson') {
+    return '购物清单条目';
+  }
+
+  if (itemFieldName === 'ingredientItemJson') {
+    return '食材库条目';
+  }
+
+  return '条目';
+}
+
 function createFamilyItemCollectionController(service, itemFieldName) {
+  const itemLabel = getItemLabel(itemFieldName);
+
   async function upsertItem(req, res, next) {
     try {
       const familyCode = normalizeText(
@@ -41,7 +55,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       // - ingredientItemJson：食材库
       // 同时兼容 itemJson/item，是为了调试和未来通用客户端更方便。
       const itemJson = req.body[itemFieldName] || req.body.itemJson || req.body.item;
-      const familyCodeError = validateText(familyCode, 'familyCode', FAMILY_CODE_MAX_LENGTH);
+      const familyCodeError = validateText(familyCode, '家庭码', FAMILY_CODE_MAX_LENGTH);
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
@@ -50,20 +64,20 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       }
 
       if (itemJson === undefined || itemJson === null) {
-        return res.status(400).json({ message: `${itemFieldName} is required` });
+        return res.status(400).json({ message: `请填写${itemLabel}数据` });
       }
 
       const data = await service.upsertItemByDevice(device.deviceId, familyCode, itemJson);
 
       if (!data) {
-        return res.status(403).json({ message: 'device has not joined this family' });
+        return res.status(403).json({ message: '当前设备还没有加入这个家庭' });
       }
 
       return res.json({ data });
     } catch (error) {
       // JSON 字符串解析失败，说明请求体里的 item 不是合法 JSON。
       if (error instanceof SyntaxError) {
-        return res.status(400).json({ message: `${itemFieldName} must be valid JSON` });
+        return res.status(400).json({ message: `${itemLabel}数据格式不正确` });
       }
 
       // TypeError 主要来自业务校验，比如 item 不是对象、缺少 id。
@@ -78,7 +92,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
   async function getItem(req, res, next) {
     try {
       const itemId = normalizeText(getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'itemId'));
-      const itemIdError = validateText(itemId, 'itemId', ITEM_ID_MAX_LENGTH);
+      const itemIdError = validateText(itemId, '条目 ID', ITEM_ID_MAX_LENGTH);
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
@@ -89,11 +103,11 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       const data = await service.getItemByDevice(device.deviceId, itemId);
 
       if (!data) {
-        return res.status(404).json({ message: 'Family member not found' });
+        return res.status(404).json({ message: '家庭成员不存在' });
       }
 
       if (!data.item || data.item.deleted) {
-        return res.status(404).json({ message: 'item not found' });
+        return res.status(404).json({ message: '条目不存在' });
       }
 
       return res.json({ data });
@@ -110,7 +124,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       const data = await service.listItemsByDevice(device.deviceId);
 
       if (!data) {
-        return res.status(404).json({ message: 'Family member not found' });
+        return res.status(404).json({ message: '家庭成员不存在' });
       }
 
       return res.json({ data });
@@ -129,7 +143,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       const data = await service.getChangesByDevice(device.deviceId, req.query.since);
 
       if (!data) {
-        return res.status(404).json({ message: 'Family member not found' });
+        return res.status(404).json({ message: '家庭成员不存在' });
       }
 
       return res.json({ data });
@@ -142,7 +156,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
     try {
       // DELETE 请求有些客户端不方便带 body，所以这里同时支持 body 和 query。
       const itemId = normalizeText(getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'itemId'));
-      const itemIdError = validateText(itemId, 'itemId', ITEM_ID_MAX_LENGTH);
+      const itemIdError = validateText(itemId, '条目 ID', ITEM_ID_MAX_LENGTH);
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
@@ -153,7 +167,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       const data = await service.deleteItemByDevice(device.deviceId, itemId);
 
       if (!data) {
-        return res.status(404).json({ message: 'Family member not found' });
+        return res.status(404).json({ message: '家庭成员不存在' });
       }
 
       return res.json({ data });

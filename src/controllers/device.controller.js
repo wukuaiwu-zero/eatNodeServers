@@ -6,11 +6,11 @@ const DEVICE_SECRET_MAX_LENGTH = 200;
 
 function validateText(value, fieldName, maxLength, required = false) {
   if (required && !value) {
-    return `${fieldName} is required`;
+    return `请填写${fieldName}`;
   }
 
   if (value && value.length > maxLength) {
-    return `${fieldName} must be ${maxLength} characters or fewer`;
+    return `${fieldName}太长了，不能超过 ${maxLength} 个字符`;
   }
 
   return null;
@@ -20,8 +20,8 @@ async function registerDevice(req, res, next) {
   try {
     const deviceId = normalizeText(req.body.deviceId);
     const deviceSecret = normalizeText(req.body.deviceSecret);
-    const deviceIdError = validateText(deviceId, 'deviceId', DEVICE_ID_MAX_LENGTH);
-    const secretError = validateText(deviceSecret, 'deviceSecret', DEVICE_SECRET_MAX_LENGTH);
+    const deviceIdError = validateText(deviceId, '设备编号', DEVICE_ID_MAX_LENGTH);
+    const secretError = validateText(deviceSecret, '设备密钥', DEVICE_SECRET_MAX_LENGTH);
 
     if (deviceIdError) {
       return res.status(400).json({ message: deviceIdError });

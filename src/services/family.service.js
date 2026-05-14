@@ -19,7 +19,7 @@ function createNotFoundError(message) {
   return error;
 }
 
-function createForbiddenError(message = 'device is not allowed to access this family') {
+function createForbiddenError(message = '当前设备没有这个家庭的访问权限') {
   const error = new Error(message);
   error.statusCode = 403;
   return error;
@@ -58,7 +58,7 @@ async function createFamily(familyCode, familyName = null, options = {}) {
     const current = mockFamilies.get(familyCode);
 
     if (current) {
-      throw createConflictError('familyCode already exists');
+      throw createConflictError('这个家庭码已经被使用');
     }
 
     const now = new Date().toISOString();
@@ -87,7 +87,7 @@ async function createFamily(familyCode, familyName = null, options = {}) {
   );
 
   if (rows[0]) {
-    throw createConflictError('familyCode already exists');
+    throw createConflictError('这个家庭码已经被使用');
   }
 
   await query(
@@ -204,7 +204,7 @@ async function createFamilyInvite(familyCode, ttlMinutes = 60) {
   const family = await getFamilyByCode(familyCode);
 
   if (!family) {
-    throw createNotFoundError('Family not found');
+    throw createNotFoundError('家庭不存在');
   }
 
   const inviteCode = createInviteCode();
@@ -245,7 +245,7 @@ async function consumeFamilyInvite(inviteCode) {
     const invite = mockInvites.get(inviteCode);
 
     if (!invite || Date.parse(invite.expires_at) <= Date.now()) {
-      throw createNotFoundError('inviteCode is invalid or expired');
+      throw createNotFoundError('邀请码无效或已过期');
     }
 
     invite.used_at = new Date().toISOString();
@@ -262,7 +262,7 @@ async function consumeFamilyInvite(inviteCode) {
   const invite = rows[0];
 
   if (!invite || new Date(invite.expires_at).getTime() <= Date.now()) {
-    throw createNotFoundError('inviteCode is invalid or expired');
+    throw createNotFoundError('邀请码无效或已过期');
   }
 
   await query(

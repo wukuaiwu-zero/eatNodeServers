@@ -17,7 +17,7 @@ async function getFamilyJsonData(req, res, next) {
     if (!member) {
       // 这里返回 404 的原因通常是数据库里还没有 family_members 记录。
       // 解决方式：先上传一次家庭菜谱/购物清单/食材库，或执行 mock seed。
-      return res.status(404).json({ message: 'Family member not found' });
+      return res.status(404).json({ message: '家庭成员不存在' });
     }
 
     // 这三个查询都用 member.familyCode，而不是让前端传 familyCode。

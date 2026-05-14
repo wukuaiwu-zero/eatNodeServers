@@ -100,7 +100,7 @@ async function bindMemberToInitialFamily(memberCode, familyCode, options = {}) {
     const current = mockFamilyMembers.get(memberCode) || findMockMemberByDevice(options.deviceId, familyCode);
 
     if (current && current.family_code !== familyCode) {
-      throw createConflictError('memberCode is already bound to another familyCode');
+      throw createConflictError('这个成员已经加入了其他家庭');
     }
 
     const now = new Date().toISOString();
@@ -134,7 +134,7 @@ async function bindMemberToInitialFamily(memberCode, familyCode, options = {}) {
   const member = await getFamilyMemberByCode(memberCode);
 
   if (member.familyCode !== familyCode) {
-    throw createConflictError('memberCode is already bound to another familyCode');
+    throw createConflictError('这个成员已经加入了其他家庭');
   }
 
   return member;
@@ -172,7 +172,7 @@ async function joinFamily(memberCode, familyCode) {
   const targetFamily = await familyService.getFamilyByCode(familyCode);
 
   if (!targetFamily) {
-    throw createNotFoundError('target familyCode does not exist');
+    throw createNotFoundError('目标家庭不存在');
   }
 
   if (env.useMockDb) {
@@ -196,7 +196,7 @@ async function joinFamily(memberCode, familyCode) {
     }
 
     if (current.family_code !== familyCode && current.joined_family) {
-      throw createConflictError('memberCode has already joined a family and cannot change familyCode');
+      throw createConflictError('这个成员已经加入家庭，不能切换到其他家庭');
     }
 
     current.family_code = familyCode;
@@ -218,7 +218,7 @@ async function joinFamily(memberCode, familyCode) {
   }
 
   if (current.familyCode !== familyCode && current.joinedFamily) {
-    throw createConflictError('memberCode has already joined a family and cannot change familyCode');
+    throw createConflictError('这个成员已经加入家庭，不能切换到其他家庭');
   }
 
   await query(
@@ -339,7 +339,7 @@ async function upsertFamilyRecipeByDevice(deviceId, familyCode, recipeJson) {
   const member = await getFamilyMemberByDevice(deviceId, familyCode);
 
   if (!member) {
-    throw createNotFoundError('device has not joined this family');
+    throw createNotFoundError('当前设备还没有加入这个家庭');
   }
 
   const recipe = await upsertFamilyRecipe(member.familyCode, recipeJson);
