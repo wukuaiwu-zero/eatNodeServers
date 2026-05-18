@@ -5,6 +5,10 @@
 - `familyRecipe`
 - `shoppingList`
 - `ingredientLibrary`
+- `shoppingCategories`
+- `ingredientCategories`
+- `recipeCategories`
+- `recipePoolItems`
 
 请求必须带：
 
@@ -25,10 +29,15 @@ GET /api/getFamilyData
 {
   "data": {
     "familyRecipe": {
-      "recipes": []
+      "recipes": [],
+      "coverUrl": "/uploads/recipe-covers/fam_xxx/xxx.jpg"
     },
     "shoppingList": [],
-    "ingredientLibrary": []
+    "ingredientLibrary": [],
+    "shoppingCategories": [],
+    "ingredientCategories": [],
+    "recipeCategories": [],
+    "recipePoolItems": []
   }
 }
 ```

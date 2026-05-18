@@ -176,3 +176,56 @@ ON DUPLICATE KEY UPDATE
   version = version + 1,
   deleted_at = NULL,
   updated_at = CURRENT_TIMESTAMP;
+
+-- 7. 购物车类别、食材类别和菜品类别按家庭存储。
+-- 默认类别是每个家庭初始化时都会有的基础选项，用户后续可以自己新增类别。
+INSERT INTO family_shopping_categories
+  (category_id, family_code, name, sort_order, is_default, created_by, updated_by, version, deleted_at)
+VALUES
+  ('shopping_cat_staple', 'default_family', '主食', 10, 1, 'system', 'system', 1, NULL),
+  ('shopping_cat_vegetable', 'default_family', '蔬菜', 20, 1, 'system', 'system', 1, NULL),
+  ('shopping_cat_meat', 'default_family', '肉类', 30, 1, 'system', 'system', 1, NULL),
+  ('shopping_cat_egg_dairy', 'default_family', '蛋奶', 40, 1, 'system', 'system', 1, NULL),
+  ('shopping_cat_seasoning', 'default_family', '调味', 50, 1, 'system', 'system', 1, NULL),
+  ('shopping_cat_other', 'default_family', '其他', 900, 1, 'system', 'system', 1, NULL)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  sort_order = VALUES(sort_order),
+  is_default = VALUES(is_default),
+  updated_by = VALUES(updated_by),
+  deleted_at = NULL,
+  updated_at = CURRENT_TIMESTAMP;
+
+INSERT INTO family_ingredient_categories
+  (category_id, family_code, name, sort_order, is_default, created_by, updated_by, version, deleted_at)
+VALUES
+  ('ingredient_cat_staple', 'default_family', '主食', 10, 1, 'system', 'system', 1, NULL),
+  ('ingredient_cat_vegetable', 'default_family', '蔬菜', 20, 1, 'system', 'system', 1, NULL),
+  ('ingredient_cat_meat', 'default_family', '肉类', 30, 1, 'system', 'system', 1, NULL),
+  ('ingredient_cat_egg_dairy', 'default_family', '蛋奶', 40, 1, 'system', 'system', 1, NULL),
+  ('ingredient_cat_seasoning', 'default_family', '调味', 50, 1, 'system', 'system', 1, NULL),
+  ('ingredient_cat_other', 'default_family', '其他', 900, 1, 'system', 'system', 1, NULL)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  sort_order = VALUES(sort_order),
+  is_default = VALUES(is_default),
+  updated_by = VALUES(updated_by),
+  deleted_at = NULL,
+  updated_at = CURRENT_TIMESTAMP;
+
+INSERT INTO family_recipe_categories
+  (category_id, family_code, name, sort_order, is_default, created_by, updated_by, version, deleted_at)
+VALUES
+  ('recipe_cat_home', 'default_family', '家常菜', 10, 1, 'system', 'system', 1, NULL),
+  ('recipe_cat_cold', 'default_family', '凉菜', 20, 1, 'system', 'system', 1, NULL),
+  ('recipe_cat_soup', 'default_family', '汤羹', 30, 1, 'system', 'system', 1, NULL),
+  ('recipe_cat_staple', 'default_family', '主食', 40, 1, 'system', 'system', 1, NULL),
+  ('recipe_cat_breakfast', 'default_family', '早餐', 50, 1, 'system', 'system', 1, NULL),
+  ('recipe_cat_other', 'default_family', '其他', 900, 1, 'system', 'system', 1, NULL)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  sort_order = VALUES(sort_order),
+  is_default = VALUES(is_default),
+  updated_by = VALUES(updated_by),
+  deleted_at = NULL,
+  updated_at = CURRENT_TIMESTAMP;

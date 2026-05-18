@@ -1,9 +1,31 @@
 {
   "info": {
-    "name": "家庭厨房 Node API",
-    "description": "Apifox/Postman 导入用接口集合。推荐流程：POST /api/registerDevice 获取 deviceId/deviceSecret -> POST /api/createFamily 或 POST /api/joinFamily -> GET /api/getFamilyData 拉取业务数据。",
+    "name": "家庭厨房 Node API - 当前版本",
+    "description": "Postman v2.1 collection。推荐流程：registerDevice -> createFamily 或 joinFamily -> getFamilyData。除注册设备外，接口需要 X-Device-Id / X-Device-Secret。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000"
+    },
+    {
+      "key": "deviceId",
+      "value": ""
+    },
+    {
+      "key": "deviceSecret",
+      "value": ""
+    },
+    {
+      "key": "familyCode",
+      "value": ""
+    },
+    {
+      "key": "inviteCode",
+      "value": ""
+    }
+  ],
   "item": [
     {
       "name": "设备",
@@ -16,8 +38,7 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               }
             ],
             "url": {
@@ -31,7 +52,7 @@
               ],
               "query": []
             },
-            "description": "前端首次启动时调用。请求体可以为空，服务端返回 deviceId 和 deviceSecret。\n\n认证/Header：\n\n无设备认证 Header。\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| deviceId | string | 否 | 可选。客户端已有自定义设备 ID 时传入；一般不传，由后端生成。示例：dev_abc |\n| deviceSecret | string | 否 | 可选。客户端已有设备密钥时传入；一般不传，由后端生成。 |\n\n请求 Body 示例：\n\n```json\n{}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"device\": {\n      \"deviceId\": \"dev_abc\"\n    },\n    \"deviceSecret\": \"只返回一次的密钥\"\n  }\n}\n```",
+            "description": "首次启动调用。返回 device.deviceId 和 deviceSecret。",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -42,57 +63,26 @@
               }
             }
           },
-          "response": [
+          "response": [],
+          "event": [
             {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/registerDevice",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "registerDevice"
-                  ],
-                  "query": []
-                },
-                "description": "前端首次启动时调用。请求体可以为空，服务端返回 deviceId 和 deviceSecret。\n\n认证/Header：\n\n无设备认证 Header。\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| deviceId | string | 否 | 可选。客户端已有自定义设备 ID 时传入；一般不传，由后端生成。示例：dev_abc |\n| deviceSecret | string | 否 | 可选。客户端已有设备密钥时传入；一般不传，由后端生成。 |\n\n请求 Body 示例：\n\n```json\n{}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"device\": {\n      \"deviceId\": \"dev_abc\"\n    },\n    \"deviceSecret\": \"只返回一次的密钥\"\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 201,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"device\": {\n      \"deviceId\": \"dev_abc\"\n    },\n    \"deviceSecret\": \"只返回一次的密钥\"\n  }\n}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || {};",
+                  "if (data.device && data.device.deviceId) pm.collectionVariables.set('deviceId', data.device && data.device.deviceId);",
+                  "if (data.deviceSecret) pm.collectionVariables.set('deviceSecret', data.deviceSecret);"
+                ]
+              }
             }
           ]
         }
       ]
     },
     {
-      "name": "家庭",
+      "name": "家庭与成员",
       "item": [
         {
           "name": "创建家庭",
@@ -102,20 +92,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -129,10 +116,10 @@
               ],
               "query": []
             },
-            "description": "当前设备创建一个新家庭。familyCode 由服务端生成，前端不要自己传 familyCode。创建成功后当前设备会成为 owner，并返回一个邀请码。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyName | string | 否 | 家庭名称，最多 100 个字符。为空时后端允许创建默认/未命名家庭。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyName\": \"苏明明的厨房\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"family\": {\n      \"familyCode\": \"fam_xxx\",\n      \"familyName\": \"苏明明的厨房\",\n      \"createdByDeviceId\": \"dev_abc\"\n    },\n    \"familySecret\": \"家庭密钥，只返回一次\",\n    \"member\": {\n      \"memberCode\": \"dev_abc\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_abc\",\n      \"role\": \"owner\",\n      \"joinedFamily\": true\n    },\n    \"invite\": {\n      \"familyCode\": \"fam_xxx\",\n      \"inviteCode\": \"123456\",\n      \"expiresAt\": \"2026-05-12T07:28:49.000Z\"\n    }\n  }\n}\n```",
+            "description": "当前设备创建家庭，成为 owner，并返回邀请码。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyName\": \"苏明明的厨房\"\n}",
+              "raw": "{\n  \"familyName\": \"我的厨房\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -140,62 +127,19 @@
               }
             }
           },
-          "response": [
+          "response": [],
+          "event": [
             {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/createFamily",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "createFamily"
-                  ],
-                  "query": []
-                },
-                "description": "当前设备创建一个新家庭。familyCode 由服务端生成，前端不要自己传 familyCode。创建成功后当前设备会成为 owner，并返回一个邀请码。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyName | string | 否 | 家庭名称，最多 100 个字符。为空时后端允许创建默认/未命名家庭。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyName\": \"苏明明的厨房\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"family\": {\n      \"familyCode\": \"fam_xxx\",\n      \"familyName\": \"苏明明的厨房\",\n      \"createdByDeviceId\": \"dev_abc\"\n    },\n    \"familySecret\": \"家庭密钥，只返回一次\",\n    \"member\": {\n      \"memberCode\": \"dev_abc\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_abc\",\n      \"role\": \"owner\",\n      \"joinedFamily\": true\n    },\n    \"invite\": {\n      \"familyCode\": \"fam_xxx\",\n      \"inviteCode\": \"123456\",\n      \"expiresAt\": \"2026-05-12T07:28:49.000Z\"\n    }\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"familyName\": \"苏明明的厨房\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 201,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"family\": {\n      \"familyCode\": \"fam_xxx\",\n      \"familyName\": \"苏明明的厨房\",\n      \"createdByDeviceId\": \"dev_abc\"\n    },\n    \"familySecret\": \"家庭密钥，只返回一次\",\n    \"member\": {\n      \"memberCode\": \"dev_abc\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_abc\",\n      \"role\": \"owner\",\n      \"joinedFamily\": true\n    },\n    \"invite\": {\n      \"familyCode\": \"fam_xxx\",\n      \"inviteCode\": \"123456\",\n      \"expiresAt\": \"2026-05-12T07:28:49.000Z\"\n    }\n  }\n}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || {};",
+                  "if (data.family && data.family.familyCode) pm.collectionVariables.set('familyCode', data.family && data.family.familyCode);",
+                  "if (data.invite && data.invite.inviteCode) pm.collectionVariables.set('inviteCode', data.invite && data.invite.inviteCode);"
+                ]
+              }
             }
           ]
         },
@@ -205,26 +149,18 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamily?familyCode=fam_xxx",
+              "raw": "{{baseUrl}}/api/getFamily?familyCode={{familyCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -235,91 +171,33 @@
               "query": [
                 {
                   "key": "familyCode",
-                  "value": "fam_xxx",
-                  "description": "家庭编码。创建家庭或加入家庭后获得。"
+                  "value": "{{familyCode}}"
                 }
               ]
             },
-            "description": "按 familyCode 查询家庭信息。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码，最多 100 个字符。 |\n\nQuery 示例：\n\n- familyCode=fam_xxx：家庭编码。创建家庭或加入家庭后获得。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"苏明明的厨房\",\n    \"createdByDeviceId\": \"dev_abc\"\n  }\n}\n```"
+            "description": "按 familyCode 查询家庭，设备必须有权限。"
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamily?familyCode=fam_xxx",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamily"
-                  ],
-                  "query": [
-                    {
-                      "key": "familyCode",
-                      "value": "fam_xxx",
-                      "description": "家庭编码。创建家庭或加入家庭后获得。"
-                    }
-                  ]
-                },
-                "description": "按 familyCode 查询家庭信息。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码，最多 100 个字符。 |\n\nQuery 示例：\n\n- familyCode=fam_xxx：家庭编码。创建家庭或加入家庭后获得。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"苏明明的厨房\",\n    \"createdByDeviceId\": \"dev_abc\"\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"苏明明的厨房\",\n    \"createdByDeviceId\": \"dev_abc\"\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
-          "name": "修改家庭",
+          "name": "更新家庭",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -333,10 +211,10 @@
               ],
               "query": []
             },
-            "description": "修改家庭名称。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码，最多 100 个字符。 |\n| familyName | string | 否 | 新的家庭名称，最多 100 个字符。可传 null 或空值。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"familyName\": \"新的家庭名\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"新的家庭名\",\n    \"createdByDeviceId\": \"dev_abc\"\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"familyName\": \"新的家庭名\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"familyName\": \"新的厨房名\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -344,64 +222,7 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/updateFamily",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "updateFamily"
-                  ],
-                  "query": []
-                },
-                "description": "修改家庭名称。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码，最多 100 个字符。 |\n| familyName | string | 否 | 新的家庭名称，最多 100 个字符。可传 null 或空值。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"familyName\": \"新的家庭名\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"新的家庭名\",\n    \"createdByDeviceId\": \"dev_abc\"\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"familyName\": \"新的家庭名\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"新的家庭名\",\n    \"createdByDeviceId\": \"dev_abc\"\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "删除家庭",
@@ -411,20 +232,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -438,10 +256,10 @@
               ],
               "query": []
             },
-            "description": "删除指定家庭。当前设备必须已经加入这个家庭。注意这是危险操作，前端应做二次确认。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 要删除的家庭编码。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"苏明明的厨房\"\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"fam_xxx\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -449,64 +267,88 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/deleteFamily",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "deleteFamily"
-                  ],
-                  "query": []
-                },
-                "description": "删除指定家庭。当前设备必须已经加入这个家庭。注意这是危险操作，前端应做二次确认。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 要删除的家庭编码。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"苏明明的厨房\"\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"familyCode\": \"fam_xxx\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
+          "response": []
+        },
+        {
+          "name": "查询家庭成员",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
               },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyMembers?familyCode={{familyCode}}",
+              "host": [
+                "{{baseUrl}}"
               ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"familyName\": \"苏明明的厨房\"\n  }\n}"
+              "path": [
+                "api",
+                "getFamilyMembers"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
+            },
+            "description": "返回 name/title/avatarUrl/role/isManager。"
+          },
+          "response": []
+        },
+        {
+          "name": "更新我的成员资料",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/updateMyFamilyMemberProfile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "updateMyFamilyMemberProfile"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"name\": \"小明\",\n  \"title\": \"爸爸\",\n  \"avatarUrl\": \"/uploads/avatars/a.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          ]
+          },
+          "response": []
         },
         {
           "name": "创建家庭邀请码",
@@ -516,20 +358,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -543,10 +382,10 @@
               ],
               "query": []
             },
-            "description": "为已有家庭创建邀请码，用于邀请其他设备加入。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。 |\n| ttlMinutes | number | 否 | 邀请码有效期，单位分钟。默认 60。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"ttlMinutes\": 60\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"inviteCode\": \"123456\",\n    \"expiresAt\": \"2026-05-12T07:28:49.000Z\"\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"ttlMinutes\": 60\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ttlMinutes\": 60\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -554,92 +393,40 @@
               }
             }
           },
-          "response": [
+          "response": [],
+          "event": [
             {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/createFamilyInvite",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "createFamilyInvite"
-                  ],
-                  "query": []
-                },
-                "description": "为已有家庭创建邀请码，用于邀请其他设备加入。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。 |\n| ttlMinutes | number | 否 | 邀请码有效期，单位分钟。默认 60。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"ttlMinutes\": 60\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"inviteCode\": \"123456\",\n    \"expiresAt\": \"2026-05-12T07:28:49.000Z\"\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"ttlMinutes\": 60\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 201,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"inviteCode\": \"123456\",\n    \"expiresAt\": \"2026-05-12T07:28:49.000Z\"\n  }\n}"
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || {};",
+                  "if (data.inviteCode) pm.collectionVariables.set('inviteCode', data.inviteCode);"
+                ]
+              }
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "家庭成员",
-      "item": [
+        },
         {
-          "name": "通过邀请码加入家庭",
+          "name": "加入家庭",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -653,10 +440,10 @@
               ],
               "query": []
             },
-            "description": "当前设备使用 inviteCode 加入家庭。加入成功后返回成员关系，前端应保存 data.familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| inviteCode | string | 是 | 家庭邀请码。由家庭成员调用创建邀请码接口获得。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"inviteCode\": \"123456\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"memberCode\": \"dev_abc\",\n    \"familyCode\": \"fam_xxx\",\n    \"deviceId\": \"dev_abc\",\n    \"role\": \"member\",\n    \"joinedFamily\": true\n  }\n}\n```",
+            "description": "使用邀请码加入家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"inviteCode\": \"123456\"\n}",
+              "raw": "{\n  \"inviteCode\": \"{{inviteCode}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -664,163 +451,7 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/joinFamily",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "joinFamily"
-                  ],
-                  "query": []
-                },
-                "description": "当前设备使用 inviteCode 加入家庭。加入成功后返回成员关系，前端应保存 data.familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| inviteCode | string | 是 | 家庭邀请码。由家庭成员调用创建邀请码接口获得。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"inviteCode\": \"123456\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"memberCode\": \"dev_abc\",\n    \"familyCode\": \"fam_xxx\",\n    \"deviceId\": \"dev_abc\",\n    \"role\": \"member\",\n    \"joinedFamily\": true\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"inviteCode\": \"123456\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"memberCode\": \"dev_abc\",\n    \"familyCode\": \"fam_xxx\",\n    \"deviceId\": \"dev_abc\",\n    \"role\": \"member\",\n    \"joinedFamily\": true\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "查询家庭成员",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
-                "key": "X-Device-Id",
-                "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-              },
-              {
-                "key": "X-Device-Secret",
-                "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-              }
-            ],
-            "url": {
-              "raw": "{{baseUrl}}/api/getFamilyMembers?familyCode=fam_xxx",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "getFamilyMembers"
-              ],
-              "query": [
-                {
-                  "key": "familyCode",
-                  "value": "fam_xxx",
-                  "description": "家庭编码。"
-                }
-              ]
-            },
-            "description": "查询指定家庭的成员列表。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。 |\n\nQuery 示例：\n\n- familyCode=fam_xxx：家庭编码。\n\n成功响应示例：\n\n```json\n{\n  \"data\": [\n    {\n      \"memberCode\": \"dev_abc\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_abc\",\n      \"role\": \"owner\",\n      \"joinedFamily\": true\n    }\n  ]\n}\n```"
-          },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyMembers?familyCode=fam_xxx",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyMembers"
-                  ],
-                  "query": [
-                    {
-                      "key": "familyCode",
-                      "value": "fam_xxx",
-                      "description": "家庭编码。"
-                    }
-                  ]
-                },
-                "description": "查询指定家庭的成员列表。当前设备必须已经加入这个家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。 |\n\nQuery 示例：\n\n- familyCode=fam_xxx：家庭编码。\n\n成功响应示例：\n\n```json\n{\n  \"data\": [\n    {\n      \"memberCode\": \"dev_abc\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_abc\",\n      \"role\": \"owner\",\n      \"joinedFamily\": true\n    }\n  ]\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": [\n    {\n      \"memberCode\": \"dev_abc\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_abc\",\n      \"role\": \"owner\",\n      \"joinedFamily\": true\n    }\n  ]\n}"
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -835,20 +466,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -862,10 +490,10 @@
               ],
               "query": []
             },
-            "description": "保存当前家庭整份菜谱 JSON。当前服务按家庭存一整份 recipeJson。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。当前设备必须已加入该家庭。 |\n| recipeJson | object | 是 | 完整菜谱 JSON。内部结构由前端业务决定，服务端整体保存。 |\n| recipeJson.recipes | array | 否 | 菜谱数组示例字段。 |\n| recipeJson.recipes[].id | string | 建议 | 菜谱唯一 ID，前端生成。 |\n| recipeJson.recipes[].name | string | 建议 | 菜谱名称。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_tomato_egg\",\n        \"name\": \"番茄炒蛋\",\n        \"category\": \"家常菜\",\n        \"ingredients\": [\n          \"番茄\",\n          \"鸡蛋\"\n        ],\n        \"steps\": [\n          \"番茄切块\",\n          \"鸡蛋炒熟\",\n          \"合炒调味\"\n        ]\n      }\n    ]\n  }\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipeJson\": {\n      \"recipes\": []\n    }\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_tomato_egg\",\n        \"name\": \"番茄炒蛋\",\n        \"category\": \"家常菜\",\n        \"ingredients\": [\n          \"番茄\",\n          \"鸡蛋\"\n        ],\n        \"steps\": [\n          \"番茄切块\",\n          \"鸡蛋炒熟\",\n          \"合炒调味\"\n        ]\n      }\n    ]\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"coverUrl\": \"/uploads/recipe-covers/{{familyCode}}/demo.jpg\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_tomato_egg\",\n        \"name\": \"番茄炒蛋\",\n        \"coverUrl\": \"/uploads/recipe-covers/{{familyCode}}/demo.jpg\"\n      }\n    ],\n    \"coverUrl\": \"/uploads/recipe-covers/{{familyCode}}/demo.jpg\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -873,64 +501,52 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/saveFamilyRecipe",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "saveFamilyRecipe"
-                  ],
-                  "query": []
-                },
-                "description": "保存当前家庭整份菜谱 JSON。当前服务按家庭存一整份 recipeJson。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。当前设备必须已加入该家庭。 |\n| recipeJson | object | 是 | 完整菜谱 JSON。内部结构由前端业务决定，服务端整体保存。 |\n| recipeJson.recipes | array | 否 | 菜谱数组示例字段。 |\n| recipeJson.recipes[].id | string | 建议 | 菜谱唯一 ID，前端生成。 |\n| recipeJson.recipes[].name | string | 建议 | 菜谱名称。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_tomato_egg\",\n        \"name\": \"番茄炒蛋\",\n        \"category\": \"家常菜\",\n        \"ingredients\": [\n          \"番茄\",\n          \"鸡蛋\"\n        ],\n        \"steps\": [\n          \"番茄切块\",\n          \"鸡蛋炒熟\",\n          \"合炒调味\"\n        ]\n      }\n    ]\n  }\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipeJson\": {\n      \"recipes\": []\n    }\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_tomato_egg\",\n        \"name\": \"番茄炒蛋\",\n        \"category\": \"家常菜\",\n        \"ingredients\": [\n          \"番茄\",\n          \"鸡蛋\"\n        ],\n        \"steps\": [\n          \"番茄切块\",\n          \"鸡蛋炒熟\",\n          \"合炒调味\"\n        ]\n      }\n    ]\n  }\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
+          "response": []
+        },
+        {
+          "name": "上传家庭菜谱封面",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
               },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/uploadFamilyRecipeCover",
+              "host": [
+                "{{baseUrl}}"
               ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipeJson\": {\n      \"recipes\": []\n    }\n  }\n}"
+              "path": [
+                "api",
+                "uploadFamilyRecipeCover"
+              ],
+              "query": []
+            },
+            "description": "支持 jpeg/png/webp/gif，最大 4MB。返回 coverUrl。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"imageData\": \"data:image/png;base64,iVBORw0KGgo=\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          ]
+          },
+          "response": []
         },
         {
           "name": "查询当前设备家庭菜谱",
@@ -938,22 +554,14 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -967,57 +575,9 @@
               ],
               "query": []
             },
-            "description": "按当前设备绑定的家庭查询菜谱，不需要传 familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipe\": {\n      \"recipes\": []\n    }\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyRecipeByMember",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyRecipeByMember"
-                  ],
-                  "query": []
-                },
-                "description": "按当前设备绑定的家庭查询菜谱，不需要传 familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipe\": {\n      \"recipes\": []\n    }\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipe\": {\n      \"recipes\": []\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "按家庭查询菜谱",
@@ -1025,26 +585,18 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipe?familyCode=fam_xxx",
+              "raw": "{{baseUrl}}/api/getFamilyRecipe?familyCode={{familyCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1055,68 +607,13 @@
               "query": [
                 {
                   "key": "familyCode",
-                  "value": "fam_xxx",
-                  "description": "家庭编码。"
+                  "value": "{{familyCode}}"
                 }
               ]
             },
-            "description": "按 familyCode 查询菜谱。当前设备必须已加入该家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。 |\n\nQuery 示例：\n\n- familyCode=fam_xxx：家庭编码。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipeJson\": {\n      \"recipes\": []\n    }\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyRecipe?familyCode=fam_xxx",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyRecipe"
-                  ],
-                  "query": [
-                    {
-                      "key": "familyCode",
-                      "value": "fam_xxx",
-                      "description": "家庭编码。"
-                    }
-                  ]
-                },
-                "description": "按 familyCode 查询菜谱。当前设备必须已加入该家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。 |\n\nQuery 示例：\n\n- familyCode=fam_xxx：家庭编码。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipeJson\": {\n      \"recipes\": []\n    }\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipeJson\": {\n      \"recipes\": []\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -1131,20 +628,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1158,10 +652,10 @@
               ],
               "query": []
             },
-            "description": "新增或更新购物清单条目。唯一键是 familyCode + shoppingItemJson.id。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。当前设备必须已加入该家庭。 |\n| shoppingItemJson | object | 是 | 购物清单条目 JSON。 |\n| shoppingItemJson.id | string | 是 | 条目唯一 ID，最多 100 个字符，前端生成。 |\n| shoppingItemJson.name | string | 建议 | 商品名称。 |\n| shoppingItemJson.num | string | 否 | 数量文本，例如 3个、500g。 |\n| shoppingItemJson.category | string | 否 | 分类，例如 蔬菜、肉类、调料。 |\n| shoppingItemJson.price | string | 否 | 价格文本。 |\n| shoppingItemJson.done | boolean | 否 | 是否已完成/已购买。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"3个\",\n    \"category\": \"蔬菜\",\n    \"price\": \"6\",\n    \"done\": false\n  }\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"name\": \"番茄\",\n      \"num\": \"3个\",\n      \"category\": \"蔬菜\",\n      \"price\": \"6\",\n      \"done\": false\n    }\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"3个\",\n    \"category\": \"蔬菜\",\n    \"price\": \"6\",\n    \"done\": false\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"3个\",\n    \"category\": \"蔬菜\",\n    \"done\": false\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1169,64 +663,7 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/saveFamilyShoppingItem",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "saveFamilyShoppingItem"
-                  ],
-                  "query": []
-                },
-                "description": "新增或更新购物清单条目。唯一键是 familyCode + shoppingItemJson.id。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。当前设备必须已加入该家庭。 |\n| shoppingItemJson | object | 是 | 购物清单条目 JSON。 |\n| shoppingItemJson.id | string | 是 | 条目唯一 ID，最多 100 个字符，前端生成。 |\n| shoppingItemJson.name | string | 建议 | 商品名称。 |\n| shoppingItemJson.num | string | 否 | 数量文本，例如 3个、500g。 |\n| shoppingItemJson.category | string | 否 | 分类，例如 蔬菜、肉类、调料。 |\n| shoppingItemJson.price | string | 否 | 价格文本。 |\n| shoppingItemJson.done | boolean | 否 | 是否已完成/已购买。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"3个\",\n    \"category\": \"蔬菜\",\n    \"price\": \"6\",\n    \"done\": false\n  }\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"name\": \"番茄\",\n      \"num\": \"3个\",\n      \"category\": \"蔬菜\",\n      \"price\": \"6\",\n      \"done\": false\n    }\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"3个\",\n    \"category\": \"蔬菜\",\n    \"price\": \"6\",\n    \"done\": false\n  }\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"name\": \"番茄\",\n      \"num\": \"3个\",\n      \"category\": \"蔬菜\",\n      \"price\": \"6\",\n      \"done\": false\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "查询单条购物清单",
@@ -1234,22 +671,14 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1264,68 +693,13 @@
               "query": [
                 {
                   "key": "id",
-                  "value": "shop_tomato",
-                  "description": "购物清单条目 ID。也兼容 _id 或 itemId。"
+                  "value": "shop_tomato"
                 }
               ]
             },
-            "description": "按当前设备所属家庭查询单条购物清单，不需要传 familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 购物清单条目 ID。 |\n\nQuery 示例：\n\n- id=shop_tomato：购物清单条目 ID。也兼容 _id 或 itemId。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"name\": \"番茄\"\n    }\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyShoppingItem?id=shop_tomato",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyShoppingItem"
-                  ],
-                  "query": [
-                    {
-                      "key": "id",
-                      "value": "shop_tomato",
-                      "description": "购物清单条目 ID。也兼容 _id 或 itemId。"
-                    }
-                  ]
-                },
-                "description": "按当前设备所属家庭查询单条购物清单，不需要传 familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 购物清单条目 ID。 |\n\nQuery 示例：\n\n- id=shop_tomato：购物清单条目 ID。也兼容 _id 或 itemId。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"name\": \"番茄\"\n    }\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"name\": \"番茄\"\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "查询购物清单列表",
@@ -1333,22 +707,14 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1362,57 +728,9 @@
               ],
               "query": []
             },
-            "description": "查询当前设备所属家庭的未删除购物清单条目。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [\n      {\n        \"id\": \"shop_tomato\",\n        \"name\": \"番茄\",\n        \"done\": false\n      }\n    ]\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyShoppingItems",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyShoppingItems"
-                  ],
-                  "query": []
-                },
-                "description": "查询当前设备所属家庭的未删除购物清单条目。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [\n      {\n        \"id\": \"shop_tomato\",\n        \"name\": \"番茄\",\n        \"done\": false\n      }\n    ]\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [\n      {\n        \"id\": \"shop_tomato\",\n        \"name\": \"番茄\",\n        \"done\": false\n      }\n    ]\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "查询购物清单增量",
@@ -1420,22 +738,14 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1450,68 +760,13 @@
               "query": [
                 {
                   "key": "since",
-                  "value": "0",
-                  "description": "客户端上次同步到的服务端时间戳。首次同步传 0。"
+                  "value": "0"
                 }
               ]
             },
-            "description": "查询 since 时间戳之后变化过的购物清单条目，包括软删除条目。用于多端同步。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| since | number | 否 | 毫秒时间戳。返回该时间之后更新过的条目。 |\n\nQuery 示例：\n\n- since=0：客户端上次同步到的服务端时间戳。首次同步传 0。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [],\n    \"serverTime\": 1778482043966\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyShoppingChanges?since=0",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyShoppingChanges"
-                  ],
-                  "query": [
-                    {
-                      "key": "since",
-                      "value": "0",
-                      "description": "客户端上次同步到的服务端时间戳。首次同步传 0。"
-                    }
-                  ]
-                },
-                "description": "查询 since 时间戳之后变化过的购物清单条目，包括软删除条目。用于多端同步。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| since | number | 否 | 毫秒时间戳。返回该时间之后更新过的条目。 |\n\nQuery 示例：\n\n- since=0：客户端上次同步到的服务端时间戳。首次同步传 0。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [],\n    \"serverTime\": 1778482043966\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [],\n    \"serverTime\": 1778482043966\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "删除购物清单条目",
@@ -1521,20 +776,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1548,7 +800,7 @@
               ],
               "query": []
             },
-            "description": "软删除购物清单条目。服务端会保留删除状态，供增量同步使用。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 购物清单条目 ID。也兼容 _id 或 itemId。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"id\": \"shop_tomato\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"deleted\": true\n    }\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"id\": \"shop_tomato\"\n}",
@@ -1559,64 +811,7 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/deleteFamilyShoppingItem",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "deleteFamilyShoppingItem"
-                  ],
-                  "query": []
-                },
-                "description": "软删除购物清单条目。服务端会保留删除状态，供增量同步使用。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 购物清单条目 ID。也兼容 _id 或 itemId。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"id\": \"shop_tomato\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"deleted\": true\n    }\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"id\": \"shop_tomato\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"shop_tomato\",\n      \"deleted\": true\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         }
       ]
     },
@@ -1631,20 +826,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1658,10 +850,10 @@
               ],
               "query": []
             },
-            "description": "新增或更新食材库条目。唯一键是 familyCode + ingredientItemJson.id。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。当前设备必须已加入该家庭。 |\n| ingredientItemJson | object | 是 | 食材库条目 JSON。 |\n| ingredientItemJson.id | string | 是 | 条目唯一 ID，最多 100 个字符，前端生成。 |\n| ingredientItemJson.name | string | 建议 | 食材名称。 |\n| ingredientItemJson.num | string | 否 | 库存数量文本，例如 5kg、2瓶。 |\n| ingredientItemJson.category | string | 否 | 分类，例如 主食、蔬菜、调料。 |\n| ingredientItemJson.price | string | 否 | 价格文本。 |\n| ingredientItemJson.done | boolean | 否 | 当前兼容购物清单字段，可按前端业务使用。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_rice\",\n    \"name\": \"大米\",\n    \"num\": \"5kg\",\n    \"category\": \"主食\",\n    \"price\": \"35\",\n    \"done\": false\n  }\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"name\": \"大米\",\n      \"num\": \"5kg\"\n    }\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_rice\",\n    \"name\": \"大米\",\n    \"num\": \"5kg\",\n    \"category\": \"主食\",\n    \"price\": \"35\",\n    \"done\": false\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_coriander\",\n    \"name\": \"香菜\",\n    \"num\": \"1把\",\n    \"category\": \"蔬菜\",\n    \"expire_date\": \"2026-05-20\",\n    \"has\": true\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1669,64 +861,7 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/saveFamilyIngredientItem",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "saveFamilyIngredientItem"
-                  ],
-                  "query": []
-                },
-                "description": "新增或更新食材库条目。唯一键是 familyCode + ingredientItemJson.id。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| familyCode | string | 是 | 家庭编码。当前设备必须已加入该家庭。 |\n| ingredientItemJson | object | 是 | 食材库条目 JSON。 |\n| ingredientItemJson.id | string | 是 | 条目唯一 ID，最多 100 个字符，前端生成。 |\n| ingredientItemJson.name | string | 建议 | 食材名称。 |\n| ingredientItemJson.num | string | 否 | 库存数量文本，例如 5kg、2瓶。 |\n| ingredientItemJson.category | string | 否 | 分类，例如 主食、蔬菜、调料。 |\n| ingredientItemJson.price | string | 否 | 价格文本。 |\n| ingredientItemJson.done | boolean | 否 | 当前兼容购物清单字段，可按前端业务使用。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"familyCode\": \"fam_xxx\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_rice\",\n    \"name\": \"大米\",\n    \"num\": \"5kg\",\n    \"category\": \"主食\",\n    \"price\": \"35\",\n    \"done\": false\n  }\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"name\": \"大米\",\n      \"num\": \"5kg\"\n    }\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"familyCode\": \"fam_xxx\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_rice\",\n    \"name\": \"大米\",\n    \"num\": \"5kg\",\n    \"category\": \"主食\",\n    \"price\": \"35\",\n    \"done\": false\n  }\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"name\": \"大米\",\n      \"num\": \"5kg\"\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "查询单条食材",
@@ -1734,26 +869,18 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyIngredientItem?id=ingredient_rice",
+              "raw": "{{baseUrl}}/api/getFamilyIngredientItem?id=ingredient_coriander",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1764,68 +891,13 @@
               "query": [
                 {
                   "key": "id",
-                  "value": "ingredient_rice",
-                  "description": "食材条目 ID。也兼容 _id 或 itemId。"
+                  "value": "ingredient_coriander"
                 }
               ]
             },
-            "description": "按当前设备所属家庭查询单条食材，不需要传 familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 食材条目 ID。 |\n\nQuery 示例：\n\n- id=ingredient_rice：食材条目 ID。也兼容 _id 或 itemId。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"name\": \"大米\"\n    }\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyIngredientItem?id=ingredient_rice",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyIngredientItem"
-                  ],
-                  "query": [
-                    {
-                      "key": "id",
-                      "value": "ingredient_rice",
-                      "description": "食材条目 ID。也兼容 _id 或 itemId。"
-                    }
-                  ]
-                },
-                "description": "按当前设备所属家庭查询单条食材，不需要传 familyCode。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 食材条目 ID。 |\n\nQuery 示例：\n\n- id=ingredient_rice：食材条目 ID。也兼容 _id 或 itemId。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"name\": \"大米\"\n    }\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"name\": \"大米\"\n    }\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "查询食材库列表",
@@ -1833,22 +905,14 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1862,57 +926,9 @@
               ],
               "query": []
             },
-            "description": "查询当前设备所属家庭的未删除食材库条目。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [\n      {\n        \"id\": \"ingredient_rice\",\n        \"name\": \"大米\",\n        \"num\": \"5kg\"\n      }\n    ]\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyIngredientItems",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyIngredientItems"
-                  ],
-                  "query": []
-                },
-                "description": "查询当前设备所属家庭的未删除食材库条目。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [\n      {\n        \"id\": \"ingredient_rice\",\n        \"name\": \"大米\",\n        \"num\": \"5kg\"\n      }\n    ]\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [\n      {\n        \"id\": \"ingredient_rice\",\n        \"name\": \"大米\",\n        \"num\": \"5kg\"\n      }\n    ]\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "查询食材库增量",
@@ -1920,22 +936,14 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -1950,68 +958,13 @@
               "query": [
                 {
                   "key": "since",
-                  "value": "0",
-                  "description": "客户端上次同步到的服务端时间戳。首次同步传 0。"
+                  "value": "0"
                 }
               ]
             },
-            "description": "查询 since 时间戳之后变化过的食材库条目，包括软删除条目。用于多端同步。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| since | number | 否 | 毫秒时间戳。返回该时间之后更新过的条目。 |\n\nQuery 示例：\n\n- since=0：客户端上次同步到的服务端时间戳。首次同步传 0。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [],\n    \"serverTime\": 1778482043966\n  }\n}\n```"
+            "description": ""
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyIngredientChanges?since=0",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyIngredientChanges"
-                  ],
-                  "query": [
-                    {
-                      "key": "since",
-                      "value": "0",
-                      "description": "客户端上次同步到的服务端时间戳。首次同步传 0。"
-                    }
-                  ]
-                },
-                "description": "查询 since 时间戳之后变化过的食材库条目，包括软删除条目。用于多端同步。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| since | number | 否 | 毫秒时间戳。返回该时间之后更新过的条目。 |\n\nQuery 示例：\n\n- since=0：客户端上次同步到的服务端时间戳。首次同步传 0。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [],\n    \"serverTime\": 1778482043966\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"items\": [],\n    \"serverTime\": 1778482043966\n  }\n}"
-            }
-          ]
+          "response": []
         },
         {
           "name": "删除食材库条目",
@@ -2021,20 +974,17 @@
               {
                 "key": "Content-Type",
                 "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
+                "type": "text"
               },
               {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -2048,10 +998,10 @@
               ],
               "query": []
             },
-            "description": "软删除食材库条目。服务端会保留删除状态，供增量同步使用。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 食材条目 ID。也兼容 _id 或 itemId。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"id\": \"ingredient_rice\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"deleted\": true\n    }\n  }\n}\n```",
+            "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"ingredient_rice\"\n}",
+              "raw": "{\n  \"id\": \"ingredient_coriander\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2059,64 +1009,546 @@
               }
             }
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/deleteFamilyIngredientItem",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "deleteFamilyIngredientItem"
-                  ],
-                  "query": []
-                },
-                "description": "软删除食材库条目。服务端会保留删除状态，供增量同步使用。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n| 参数 | 类型 | 必填 | 说明 |\n| --- | --- | --- | --- |\n| id | string | 是 | 食材条目 ID。也兼容 _id 或 itemId。 |\n\n请求 Body 示例：\n\n```json\n{\n  \"id\": \"ingredient_rice\"\n}\n```\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"deleted\": true\n    }\n  }\n}\n```",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"id\": \"ingredient_rice\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "分类",
+      "item": [
+        {
+          "name": "保存通用分类并同步",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
               },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyCategory",
+              "host": [
+                "{{baseUrl}}"
               ],
-              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"item\": {\n      \"id\": \"ingredient_rice\",\n      \"deleted\": true\n    }\n  }\n}"
+              "path": [
+                "api",
+                "saveFamilyCategory"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"categoryType\": \"shopping\",\n  \"syncToIngredient\": true,\n  \"categoryJson\": {\n    \"name\": \"冷冻\",\n    \"sortOrder\": 60\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             }
-          ]
+          },
+          "response": []
+        },
+        {
+          "name": "保存购物分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyShoppingCategory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "saveFamilyShoppingCategory"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingCategoryJson\": {\n    \"name\": \"冷冻\",\n    \"sortOrder\": 60\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询购物分类",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyShoppingCategories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyShoppingCategories"
+              ],
+              "query": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "删除购物分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyShoppingCategory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyShoppingCategory"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"shopping_cat_xxx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "保存食材分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyIngredientCategory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "saveFamilyIngredientCategory"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientCategoryJson\": {\n    \"name\": \"干货\",\n    \"sortOrder\": 70\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询食材分类",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyIngredientCategories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyIngredientCategories"
+              ],
+              "query": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "删除食材分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyIngredientCategory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyIngredientCategory"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"ingredient_cat_xxx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "保存菜品分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyRecipeCategory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "saveFamilyRecipeCategory"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"recipeCategoryJson\": {\n    \"name\": \"快手菜\",\n    \"sortOrder\": 60\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询菜品分类",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyRecipeCategories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyRecipeCategories"
+              ],
+              "query": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "删除菜品分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyRecipeCategory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyRecipeCategory"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"recipe_cat_xxx\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "菜品随机池",
+      "item": [
+        {
+          "name": "保存菜品随机池条目",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyRecipePoolItem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "saveFamilyRecipePoolItem"
+              ],
+              "query": []
+            },
+            "description": "同一家庭下未删除菜名不能重复。type 可用 default/manual/takeout/dine_in/recipe_sync 等。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dishJson\": {\n    \"name\": \"宫保鸡丁\",\n    \"type\": \"manual\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询菜品随机池",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyRecipePoolItems",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyRecipePoolItems"
+              ],
+              "query": []
+            },
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "删除菜品随机池条目",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyRecipePoolItem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyRecipePoolItem"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"default_dish_1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
         }
       ]
     },
@@ -2129,22 +1561,14 @@
             "method": "GET",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text",
-                "description": "请求体格式，POST JSON 接口固定为 application/json"
-              },
-              {
                 "key": "X-Device-Id",
                 "value": "{{deviceId}}",
-                "type": "text",
-                "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
+                "type": "text"
               },
               {
                 "key": "X-Device-Secret",
                 "value": "{{deviceSecret}}",
-                "type": "text",
-                "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
+                "type": "text"
               }
             ],
             "url": {
@@ -2158,80 +1582,11 @@
               ],
               "query": []
             },
-            "description": "客户端进入应用主页后调用。一次返回当前设备所属家庭的菜谱、购物清单和食材库。设备必须先创建或加入家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyRecipe\": {\n      \"recipes\": []\n    },\n    \"shoppingList\": [],\n    \"ingredientLibrary\": []\n  }\n}\n```"
+            "description": "返回 familyRecipe/shoppingList/ingredientLibrary/shoppingCategories/ingredientCategories/recipeCategories/recipePoolItems。"
           },
-          "response": [
-            {
-              "name": "成功示例",
-              "originalRequest": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json",
-                    "type": "text",
-                    "description": "请求体格式，POST JSON 接口固定为 application/json"
-                  },
-                  {
-                    "key": "X-Device-Id",
-                    "value": "{{deviceId}}",
-                    "type": "text",
-                    "description": "设备 ID。先调用 POST /api/registerDevice 获取，并保存到本地。"
-                  },
-                  {
-                    "key": "X-Device-Secret",
-                    "value": "{{deviceSecret}}",
-                    "type": "text",
-                    "description": "设备密钥。只在注册设备时返回一次，后续家庭、同步、数据接口都要带。"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/getFamilyData",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "getFamilyData"
-                  ],
-                  "query": []
-                },
-                "description": "客户端进入应用主页后调用。一次返回当前设备所属家庭的菜谱、购物清单和食材库。设备必须先创建或加入家庭。\n\n认证/Header：\n\n| Header | 必填 | 说明 |\n| --- | --- | --- |\n| X-Device-Id | 是 | 设备 ID，来自注册设备接口。 |\n| X-Device-Secret | 是 | 设备密钥，来自注册设备接口。 |\n\n参数说明：\n\n无业务参数。\n\n成功响应示例：\n\n```json\n{\n  \"data\": {\n    \"familyRecipe\": {\n      \"recipes\": []\n    },\n    \"shoppingList\": [],\n    \"ingredientLibrary\": []\n  }\n}\n```"
-              },
-              "status": "OK",
-              "code": 200,
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"data\": {\n    \"familyRecipe\": {\n      \"recipes\": []\n    },\n    \"shoppingList\": [],\n    \"ingredientLibrary\": []\n  }\n}"
-            }
-          ]
+          "response": []
         }
       ]
-    }
-  ],
-  "event": [],
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://lw.fyaigpt.cyou",
-      "type": "string",
-      "description": "接口基础地址。线上域名不带 :3000。"
-    },
-    {
-      "key": "deviceId",
-      "value": "dev_xxx",
-      "type": "string",
-      "description": "先调用注册设备接口获取。"
-    },
-    {
-      "key": "deviceSecret",
-      "value": "设备密钥",
-      "type": "string",
-      "description": "先调用注册设备接口获取。"
     }
   ]
 }

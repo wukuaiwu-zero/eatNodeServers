@@ -37,6 +37,25 @@ function normalizeRecipeJson(recipeJson) {
   return JSON.stringify(recipeJson);
 }
 
+function parseRecipeJsonSafely(recipeJson) {
+  try {
+    return typeof recipeJson === 'string' ? JSON.parse(recipeJson) : recipeJson;
+  } catch (error) {
+    return null;
+  }
+}
+
+function normalizeCoverUrl(coverUrl) {
+  return typeof coverUrl === 'string' ? coverUrl.trim() : '';
+}
+
+function getCoverUrlFromRecipeJson(recipeJson) {
+  const parsed = parseRecipeJsonSafely(recipeJson);
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+    ? normalizeCoverUrl(parsed.coverUrl)
+    : '';
+}
+
 function parseRecipeJson(recipeJson) {
   try {
     return JSON.parse(recipeJson);
@@ -52,10 +71,16 @@ function toFamilyRecipe(row) {
     return null;
   }
 
+  const coverUrl = normalizeCoverUrl(row.cover_url) || getCoverUrlFromRecipeJson(row.recipe_json);
+  const recipeJson = parseRecipeJson(row.recipe_json);
+
   return {
     id: row.id,
     familyCode: row.family_code,
-    recipeJson: parseRecipeJson(row.recipe_json),
+    coverUrl,
+    recipeJson: recipeJson && typeof recipeJson === 'object' && !Array.isArray(recipeJson)
+      ? { ...recipeJson, coverUrl }
+      : recipeJson,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -73,7 +98,11 @@ function toFamilyMember(row) {
     memberCode: row.member_code,
     familyCode: row.family_code,
     deviceId: row.device_id || null,
+    name: row.member_name || null,
+    title: row.title || null,
+    avatarUrl: row.avatar_url || null,
     role: row.role || 'member',
+    isManager: ['owner', 'admin', 'manager'].includes(row.role || 'member'),
     joinedFamily: Boolean(row.joined_family),
     revokedAt: row.revoked_at || null,
     createdAt: row.created_at,
@@ -244,7 +273,7 @@ async function getFamilyMemberByCode(memberCode) {
   }
 
   const rows = await query(
-    `SELECT id, member_code, family_code, device_id, role, joined_family, revoked_at, created_at, updated_at
+    `SELECT id, member_code, family_code, device_id, member_name, title, avatar_url, role, joined_family, revoked_at, created_at, updated_at
      FROM family_members
      WHERE member_code = ? AND revoked_at IS NULL`,
     [memberCode]
@@ -261,7 +290,7 @@ async function getFamilyMemberByDevice(deviceId, familyCode = null) {
   const familyFilter = familyCode ? 'AND family_code = ?' : '';
   const params = familyCode ? [deviceId, familyCode] : [deviceId];
   const rows = await query(
-    `SELECT id, member_code, family_code, device_id, role, joined_family, revoked_at, created_at, updated_at
+    `SELECT id, member_code, family_code, device_id, member_name, title, avatar_url, role, joined_family, revoked_at, created_at, updated_at
      FROM family_members
      WHERE device_id = ? AND revoked_at IS NULL ${familyFilter}
      ORDER BY id ASC
@@ -280,7 +309,7 @@ async function listFamilyMembers(familyCode) {
   }
 
   const rows = await query(
-    `SELECT id, member_code, family_code, device_id, role, joined_family, revoked_at, created_at, updated_at
+    `SELECT id, member_code, family_code, device_id, member_name, title, avatar_url, role, joined_family, revoked_at, created_at, updated_at
      FROM family_members
      WHERE family_code = ? AND revoked_at IS NULL
      ORDER BY id ASC`,
@@ -290,11 +319,54 @@ async function listFamilyMembers(familyCode) {
   return rows.map(toFamilyMember);
 }
 
-async function upsertFamilyRecipe(familyCode, recipeJson) {
+async function updateFamilyMemberProfileByDevice(deviceId, familyCode, profile) {
+  const member = await getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    return null;
+  }
+
+  const normalized = {
+    name: typeof profile.name === 'string' ? profile.name.trim() : null,
+    title: typeof profile.title === 'string' ? profile.title.trim() : null,
+    avatarUrl: typeof profile.avatarUrl === 'string' ? profile.avatarUrl.trim() : null
+  };
+
+  if (env.useMockDb) {
+    const row = mockFamilyMembers.get(member.memberCode);
+    row.member_name = normalized.name || null;
+    row.title = normalized.title || null;
+    row.avatar_url = normalized.avatarUrl || null;
+    row.updated_at = new Date().toISOString();
+    mockFamilyMembers.set(member.memberCode, row);
+    return toFamilyMember(row);
+  }
+
+  await query(
+    `UPDATE family_members
+     SET member_name = ?,
+         title = ?,
+         avatar_url = ?,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE family_code = ? AND device_id = ? AND revoked_at IS NULL`,
+    [
+      normalized.name || null,
+      normalized.title || null,
+      normalized.avatarUrl || null,
+      familyCode,
+      deviceId
+    ]
+  );
+
+  return getFamilyMemberByDevice(deviceId, familyCode);
+}
+
+async function upsertFamilyRecipe(familyCode, recipeJson, options = {}) {
   // family_recipes 是 family_code 唯一。
   // 同一个家庭再次上传菜谱时，整份 recipe_json 会覆盖旧值。
   // 购物清单/食材库没有沿用这个模式，因为它们需要 item 级同步和软删除。
   const normalizedRecipeJson = normalizeRecipeJson(recipeJson);
+  const coverUrl = normalizeCoverUrl(options.coverUrl) || getCoverUrlFromRecipeJson(recipeJson) || null;
 
   if (env.useMockDb) {
     const now = new Date().toISOString();
@@ -303,6 +375,7 @@ async function upsertFamilyRecipe(familyCode, recipeJson) {
       id: current?.id || mockFamilyRecipes.size + 1,
       family_code: familyCode,
       recipe_json: normalizedRecipeJson,
+      cover_url: coverUrl ?? current?.cover_url ?? null,
       created_at: current?.created_at || now,
       updated_at: now
     };
@@ -312,22 +385,23 @@ async function upsertFamilyRecipe(familyCode, recipeJson) {
   }
 
   await query(
-    `INSERT INTO family_recipes (family_code, recipe_json)
-     VALUES (?, ?)
+    `INSERT INTO family_recipes (family_code, recipe_json, cover_url)
+     VALUES (?, ?, ?)
      ON DUPLICATE KEY UPDATE
        recipe_json = VALUES(recipe_json),
+       cover_url = IF(? = 1, VALUES(cover_url), cover_url),
        updated_at = CURRENT_TIMESTAMP`,
-    [familyCode, normalizedRecipeJson]
+    [familyCode, normalizedRecipeJson, coverUrl, coverUrl ? 1 : 0]
   );
 
   return getFamilyRecipeByCode(familyCode);
 }
 
-async function upsertFamilyRecipeByMember(memberCode, familyCode, recipeJson) {
+async function upsertFamilyRecipeByMember(memberCode, familyCode, recipeJson, options = {}) {
   // 上传菜谱时顺手完成成员和家庭的初始绑定。
   // 返回 member + recipe，是为了前端能同时拿到“我属于哪个家庭”和“当前家庭菜谱”。
   const member = await bindMemberToInitialFamily(memberCode, familyCode);
-  const recipe = await upsertFamilyRecipe(member.familyCode, recipeJson);
+  const recipe = await upsertFamilyRecipe(member.familyCode, recipeJson, options);
 
   return {
     member,
@@ -335,18 +409,61 @@ async function upsertFamilyRecipeByMember(memberCode, familyCode, recipeJson) {
   };
 }
 
-async function upsertFamilyRecipeByDevice(deviceId, familyCode, recipeJson) {
+async function upsertFamilyRecipeByDevice(deviceId, familyCode, recipeJson, options = {}) {
   const member = await getFamilyMemberByDevice(deviceId, familyCode);
 
   if (!member) {
     throw createNotFoundError('当前设备还没有加入这个家庭');
   }
 
-  const recipe = await upsertFamilyRecipe(member.familyCode, recipeJson);
+  const recipe = await upsertFamilyRecipe(member.familyCode, recipeJson, options);
 
   return {
     member,
     recipe
+  };
+}
+
+async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl) {
+  const member = await getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    throw createNotFoundError('当前设备还没有加入这个家庭');
+  }
+
+  const normalizedCoverUrl = normalizeCoverUrl(coverUrl);
+
+  if (env.useMockDb) {
+    const now = new Date().toISOString();
+    const current = mockFamilyRecipes.get(member.familyCode);
+    const row = {
+      id: current?.id || mockFamilyRecipes.size + 1,
+      family_code: member.familyCode,
+      recipe_json: current?.recipe_json || '{}',
+      cover_url: normalizedCoverUrl,
+      created_at: current?.created_at || now,
+      updated_at: now
+    };
+
+    mockFamilyRecipes.set(member.familyCode, row);
+    return {
+      member,
+      recipe: toFamilyRecipe(row)
+    };
+  }
+
+  await query(
+    `INSERT INTO family_recipes (family_code, recipe_json, cover_url)
+     VALUES (?, '{}', ?)
+     ON DUPLICATE KEY UPDATE
+       cover_url = VALUES(cover_url),
+       updated_at = CURRENT_TIMESTAMP`,
+    [member.familyCode, normalizedCoverUrl]
+  );
+
+  return {
+    member,
+    recipe: await getFamilyRecipeByCode(member.familyCode)
   };
 }
 
@@ -356,7 +473,7 @@ async function getFamilyRecipeByCode(familyCode) {
   }
 
   const rows = await query(
-    `SELECT id, family_code, recipe_json, created_at, updated_at
+    `SELECT id, family_code, recipe_json, cover_url, created_at, updated_at
      FROM family_recipes
      WHERE family_code = ?`,
     [familyCode]
@@ -412,9 +529,11 @@ module.exports = {
   getFamilyMemberByCode,
   getFamilyMemberByDevice,
   listFamilyMembers,
+  updateFamilyMemberProfileByDevice,
   upsertFamilyRecipe,
   upsertFamilyRecipeByMember,
   upsertFamilyRecipeByDevice,
+  updateFamilyRecipeCoverByDevice,
   getFamilyRecipeByCode,
   getFamilyRecipeByMember,
   getFamilyRecipeByDevice

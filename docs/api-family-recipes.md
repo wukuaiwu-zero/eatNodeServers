@@ -22,14 +22,55 @@ POST /api/saveFamilyRecipe
     "recipes": [
       {
         "id": "recipe_tomato_egg",
-        "name": "番茄炒蛋"
+        "name": "番茄炒蛋",
+        "coverUrl": "/uploads/recipe-covers/fam_xxx/xxx.jpg"
       }
-    ]
+    ],
+    "coverUrl": "/uploads/recipe-covers/fam_xxx/xxx.jpg"
   }
 }
 ```
 
 设备必须已加入 `familyCode` 对应家庭。
+
+也可以把 `coverUrl` 放在请求体顶层：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "coverUrl": "/uploads/recipe-covers/fam_xxx/xxx.jpg",
+  "recipeJson": {
+    "recipes": []
+  }
+}
+```
+
+## 上传家庭菜谱封面
+
+```text
+POST /api/uploadFamilyRecipeCover
+```
+
+请求：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "imageData": "data:image/jpeg;base64,..."
+}
+```
+
+也兼容裸 base64：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "mimeType": "image/png",
+  "imageBase64": "..."
+}
+```
+
+支持 `jpeg/png/webp/gif`，最大 4MB。上传成功后服务端会把图片存到 `public/uploads/recipe-covers`，并更新该家庭菜谱的 `coverUrl`。
 
 ## 查询当前设备家庭菜谱
 
@@ -46,3 +87,18 @@ GET /api/getFamilyRecipe?familyCode=fam_xxx
 ```
 
 设备必须已加入该家庭。
+
+菜谱相关接口返回里都会包含 `coverUrl`：
+
+```json
+{
+  "data": {
+    "familyCode": "fam_xxx",
+    "coverUrl": "/uploads/recipe-covers/fam_xxx/xxx.jpg",
+    "recipeJson": {
+      "recipes": [],
+      "coverUrl": "/uploads/recipe-covers/fam_xxx/xxx.jpg"
+    }
+  }
+}
+```

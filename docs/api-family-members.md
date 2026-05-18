@@ -36,3 +36,43 @@ GET /api/getFamilyMembers?familyCode=fam_xxx
 ```
 
 请求设备必须已加入该家庭。
+
+返回：
+
+```json
+{
+  "data": [
+    {
+      "memberCode": "dev_xxx",
+      "familyCode": "fam_xxx",
+      "deviceId": "dev_xxx",
+      "name": "小明",
+      "title": "爸爸",
+      "avatarUrl": "/uploads/avatars/a.png",
+      "role": "owner",
+      "isManager": true
+    }
+  ]
+}
+```
+
+`role` 当前常见值是 `owner`、`member`。`isManager` 会在 `role` 为 `owner`、`admin` 或 `manager` 时返回 `true`。
+
+## 更新当前设备的成员资料
+
+```text
+POST /api/updateMyFamilyMemberProfile
+```
+
+请求设备必须已加入该家庭。
+
+请求体：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "name": "小明",
+  "title": "爸爸",
+  "avatarUrl": "/uploads/avatars/a.png"
+}
+```

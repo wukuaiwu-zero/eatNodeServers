@@ -65,11 +65,16 @@ X-Device-Secret: demo_secret
 
 每个数据表/业务模块单独维护接口文档：
 
+- [当前完整接口文档](docs/api-current.md)
+- [Postman Collection](docs/apifox-postman-collection.json)
+- [线上部署更新步骤](docs/deploy-production-update.md)
 - [家庭表 families](docs/api-families.md)
 - [家庭成员表 family_members](docs/api-family-members.md)
 - [家庭菜谱表 family_recipes](docs/api-family-recipes.md)
 - [购物清单表 family_shopping_items](docs/api-family-shopping-items.md)
 - [食材库表 family_ingredient_items](docs/api-family-ingredient-items.md)
+- [家庭类别](docs/api-family-categories.md)
+- [菜品随机池](docs/api-family-recipe-pool-items.md)
 - [家庭聚合数据](docs/api-family-data.md)
 
 ## 服务器更新

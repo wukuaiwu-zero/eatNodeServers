@@ -1,6 +1,10 @@
 const familyRecipeService = require('../services/familyRecipe.service');
 const familyShoppingService = require('../services/familyShopping.service');
 const familyIngredientService = require('../services/familyIngredient.service');
+const familyShoppingCategoryService = require('../services/familyShoppingCategory.service');
+const familyIngredientCategoryService = require('../services/familyIngredientCategory.service');
+const familyRecipeCategoryService = require('../services/familyRecipeCategory.service');
+const familyRecipePoolService = require('../services/familyRecipePool.service');
 const deviceService = require('../services/device.service');
 const { getDeviceCredentials } = require('../utils/request');
 
@@ -25,6 +29,10 @@ async function getFamilyJsonData(req, res, next) {
     const recipe = await familyRecipeService.getFamilyRecipeByCode(member.familyCode);
     const shoppingList = await familyShoppingService.listItemsByFamily(member.familyCode);
     const ingredientLibrary = await familyIngredientService.listItemsByFamily(member.familyCode);
+    const shoppingCategories = await familyShoppingCategoryService.listCategoriesByFamily(member.familyCode);
+    const ingredientCategories = await familyIngredientCategoryService.listCategoriesByFamily(member.familyCode);
+    const recipeCategories = await familyRecipeCategoryService.listCategoriesByFamily(member.familyCode);
+    const recipePoolItems = await familyRecipePoolService.listDishesByFamily(member.familyCode);
 
     // 返回字段明确拆成三块：
     // - familyRecipe：当前仍是整份 JSON。
@@ -35,7 +43,11 @@ async function getFamilyJsonData(req, res, next) {
       data: {
         familyRecipe: recipe ? recipe.recipeJson : null,
         shoppingList,
-        ingredientLibrary
+        ingredientLibrary,
+        shoppingCategories,
+        ingredientCategories,
+        recipeCategories,
+        recipePoolItems
       }
     });
   } catch (error) {

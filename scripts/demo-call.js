@@ -113,6 +113,34 @@ async function main() {
   );
 
   results.push(
+    await request('/api/saveFamilyIngredientCategory', {
+      method: 'POST',
+      device: ownerDevice,
+      body: {
+        familyCode,
+        ingredientCategoryJson: {
+          name: '冷冻',
+          sortOrder: 60
+        }
+      }
+    })
+  );
+
+  results.push(
+    await request('/api/saveFamilyRecipeCategory', {
+      method: 'POST',
+      device: ownerDevice,
+      body: {
+        familyCode,
+        recipeCategoryJson: {
+          name: '快手菜',
+          sortOrder: 60
+        }
+      }
+    })
+  );
+
+  results.push(
     await request('/api/getFamilyData', {
       device: memberDevice
     })

@@ -4,6 +4,11 @@ const familyController = require('../controllers/family.controller');
 const familyRecipeController = require('../controllers/familyRecipe.controller');
 const familyShoppingController = require('../controllers/familyShopping.controller');
 const familyIngredientController = require('../controllers/familyIngredient.controller');
+const familyCategorySyncController = require('../controllers/familyCategorySync.controller');
+const familyShoppingCategoryController = require('../controllers/familyShoppingCategory.controller');
+const familyIngredientCategoryController = require('../controllers/familyIngredientCategory.controller');
+const familyRecipeCategoryController = require('../controllers/familyRecipeCategory.controller');
+const familyRecipePoolController = require('../controllers/familyRecipePool.controller');
 const familyDataController = require('../controllers/familyData.controller');
 const { createRateLimiter } = require('../middlewares/rateLimit.middleware');
 
@@ -35,9 +40,11 @@ router.get('/getFamily', familyController.getFamily);
 router.post('/updateFamily', writeLimiter, familyController.updateFamily);
 router.post('/deleteFamily', familyLimiter, familyController.deleteFamily);
 router.get('/getFamilyMembers', familyController.listFamilyMembers);
+router.post('/updateMyFamilyMemberProfile', writeLimiter, familyController.updateMyFamilyMemberProfile);
 router.post('/createFamilyInvite', familyLimiter, familyController.createFamilyInvite);
 
 router.post('/saveFamilyRecipe', writeLimiter, familyRecipeController.uploadFamilyRecipe);
+router.post('/uploadFamilyRecipeCover', writeLimiter, familyRecipeController.uploadFamilyRecipeCover);
 router.post('/joinFamily', familyLimiter, familyRecipeController.joinFamily);
 router.get('/getFamilyRecipeByMember', familyRecipeController.getFamilyRecipeByMember);
 router.get('/getFamilyRecipe', familyRecipeController.getFamilyRecipe);
@@ -53,6 +60,24 @@ router.get('/getFamilyIngredientItem', familyIngredientController.getItem);
 router.get('/getFamilyIngredientItems', familyIngredientController.listItemsByMember);
 router.get('/getFamilyIngredientChanges', familyIngredientController.getChangesByMember);
 router.post('/deleteFamilyIngredientItem', writeLimiter, familyIngredientController.deleteItem);
+
+router.post('/saveFamilyCategory', writeLimiter, familyCategorySyncController.saveCategory);
+
+router.post('/saveFamilyShoppingCategory', writeLimiter, familyShoppingCategoryController.upsertCategory);
+router.get('/getFamilyShoppingCategories', familyShoppingCategoryController.listCategories);
+router.post('/deleteFamilyShoppingCategory', writeLimiter, familyShoppingCategoryController.deleteCategory);
+
+router.post('/saveFamilyIngredientCategory', writeLimiter, familyIngredientCategoryController.upsertCategory);
+router.get('/getFamilyIngredientCategories', familyIngredientCategoryController.listCategories);
+router.post('/deleteFamilyIngredientCategory', writeLimiter, familyIngredientCategoryController.deleteCategory);
+
+router.post('/saveFamilyRecipeCategory', writeLimiter, familyRecipeCategoryController.upsertCategory);
+router.get('/getFamilyRecipeCategories', familyRecipeCategoryController.listCategories);
+router.post('/deleteFamilyRecipeCategory', writeLimiter, familyRecipeCategoryController.deleteCategory);
+
+router.post('/saveFamilyRecipePoolItem', writeLimiter, familyRecipePoolController.upsertDish);
+router.get('/getFamilyRecipePoolItems', familyRecipePoolController.listDishes);
+router.post('/deleteFamilyRecipePoolItem', writeLimiter, familyRecipePoolController.deleteDish);
 
 router.get('/getFamilyData', familyDataController.getFamilyJsonData);
 
