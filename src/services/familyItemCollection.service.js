@@ -95,6 +95,22 @@ function toItem(row) {
   };
 }
 
+function normalizeCategory(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function itemMatchesCategory(item, category) {
+  const normalizedCategory = normalizeCategory(category);
+
+  if (!normalizedCategory) {
+    return true;
+  }
+
+  return [item.category, item.categoryId, item.category_id]
+    .map(normalizeCategory)
+    .some((value) => value === normalizedCategory);
+}
+
 function createFamilyItemCollectionService({ tableName }) {
   // USE_MOCK_DB=true 时不连 MySQL，直接用内存 Map 模拟表。
   // 这适合本地接口验证；服务重启后 mock 数据会清空。
@@ -236,13 +252,15 @@ function createFamilyItemCollectionService({ tableName }) {
     // 普通列表默认只返回未删除数据。
     // 增量同步接口需要知道“哪些被删了”，才会显式包含 deleted_at 不为空的数据。
     const includeDeleted = Boolean(options.includeDeleted);
+    const category = normalizeCategory(options.category || options.categoryId || options.category_id);
 
     if (env.useMockDb) {
       return Array.from(mockItems.values())
         .filter((row) => row.family_code === familyCode)
         .filter((row) => includeDeleted || !row.deleted_at)
         .sort((a, b) => (a.create_time || 0) - (b.create_time || 0))
-        .map(toItem);
+        .map(toItem)
+        .filter((item) => itemMatchesCategory(item, category));
     }
 
     const deletedFilter = includeDeleted ? '' : 'AND deleted_at IS NULL';
@@ -254,7 +272,7 @@ function createFamilyItemCollectionService({ tableName }) {
       [familyCode]
     );
 
-    return rows.map(toItem);
+    return rows.map(toItem).filter((item) => itemMatchesCategory(item, category));
   }
 
   async function listItemsByMember(memberCode, options = {}) {

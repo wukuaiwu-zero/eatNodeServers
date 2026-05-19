@@ -33,6 +33,28 @@ POST /api/saveFamilyIngredientItem
 
 设备必须已加入 `familyCode` 对应家庭。
 
+## 修改食材库条目
+
+```text
+POST /api/updateFamilyIngredientItem
+```
+
+请求体和保存接口一致。按 `familyCode + id` 覆盖同一条食材库存，并递增 `version`：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "ingredientItemJson": {
+    "id": "ingredient_rice",
+    "name": "大米",
+    "num": "3kg",
+    "category": "主食",
+    "price": "22",
+    "done": false
+  }
+}
+```
+
 ## 查询单条食材
 
 ```text
@@ -48,6 +70,15 @@ GET /api/getFamilyIngredientItems
 ```
 
 按当前设备所属家庭返回未删除条目。
+
+可按分类筛选：
+
+```text
+GET /api/getFamilyIngredientItems?category=主食
+GET /api/getFamilyIngredientItems?categoryId=cat_staple
+```
+
+服务端会匹配条目 JSON 里的 `category`、`categoryId` 或 `category_id` 字段。
 
 ## 查询食材库增量
 

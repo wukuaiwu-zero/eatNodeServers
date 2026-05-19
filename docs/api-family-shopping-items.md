@@ -33,6 +33,28 @@ POST /api/saveFamilyShoppingItem
 
 设备必须已加入 `familyCode` 对应家庭。服务端会把条目的 `family_id` 统一改成后端确认过的家庭。
 
+## 修改购物清单条目
+
+```text
+POST /api/updateFamilyShoppingItem
+```
+
+请求体和保存接口一致。按 `familyCode + id` 覆盖同一条购物清单，并递增 `version`：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "shoppingItemJson": {
+    "id": "shop_tomato",
+    "name": "番茄",
+    "num": "5个",
+    "category": "蔬菜",
+    "price": "10",
+    "done": true
+  }
+}
+```
+
 ## 查询单条购物清单
 
 ```text
@@ -48,6 +70,15 @@ GET /api/getFamilyShoppingItems
 ```
 
 按当前设备所属家庭返回未删除条目。
+
+可按分类筛选：
+
+```text
+GET /api/getFamilyShoppingItems?category=蔬菜
+GET /api/getFamilyShoppingItems?categoryId=cat_vegetable
+```
+
+服务端会匹配条目 JSON 里的 `category`、`categoryId` 或 `category_id` 字段。
 
 ## 查询购物清单增量
 

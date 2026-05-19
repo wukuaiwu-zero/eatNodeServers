@@ -50,12 +50,14 @@ router.get('/getFamilyRecipeByMember', familyRecipeController.getFamilyRecipeByM
 router.get('/getFamilyRecipe', familyRecipeController.getFamilyRecipe);
 
 router.post('/saveFamilyShoppingItem', writeLimiter, familyShoppingController.upsertItem);
+router.post('/updateFamilyShoppingItem', writeLimiter, familyShoppingController.upsertItem);
 router.get('/getFamilyShoppingItem', familyShoppingController.getItem);
 router.get('/getFamilyShoppingItems', familyShoppingController.listItemsByMember);
 router.get('/getFamilyShoppingChanges', familyShoppingController.getChangesByMember);
 router.post('/deleteFamilyShoppingItem', writeLimiter, familyShoppingController.deleteItem);
 
 router.post('/saveFamilyIngredientItem', writeLimiter, familyIngredientController.upsertItem);
+router.post('/updateFamilyIngredientItem', writeLimiter, familyIngredientController.upsertItem);
 router.get('/getFamilyIngredientItem', familyIngredientController.getItem);
 router.get('/getFamilyIngredientItems', familyIngredientController.listItemsByMember);
 router.get('/getFamilyIngredientChanges', familyIngredientController.getChangesByMember);

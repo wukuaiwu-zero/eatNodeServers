@@ -666,6 +666,51 @@
           "response": []
         },
         {
+          "name": "修改购物清单条目",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/updateFamilyShoppingItem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "updateFamilyShoppingItem"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"5个\",\n    \"category\": \"蔬菜\",\n    \"done\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
           "name": "查询单条购物清单",
           "request": {
             "method": "GET",
@@ -729,6 +774,42 @@
               "query": []
             },
             "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "按分类查询购物清单列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyShoppingItems?category=%E8%94%AC%E8%8F%9C",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyShoppingItems"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "蔬菜"
+                }
+              ]
+            },
+            "description": "按条目 JSON 里的 category、categoryId 或 category_id 字段筛选。"
           },
           "response": []
         },
@@ -864,6 +945,51 @@
           "response": []
         },
         {
+          "name": "修改食材库条目",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/updateFamilyIngredientItem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "updateFamilyIngredientItem"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_coriander\",\n    \"name\": \"香菜\",\n    \"num\": \"2把\",\n    \"category\": \"蔬菜\",\n    \"expire_date\": \"2026-05-21\",\n    \"has\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
           "name": "查询单条食材",
           "request": {
             "method": "GET",
@@ -927,6 +1053,42 @@
               "query": []
             },
             "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "按分类查询食材库列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyIngredientItems?category=%E8%94%AC%E8%8F%9C",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyIngredientItems"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "蔬菜"
+                }
+              ]
+            },
+            "description": "按条目 JSON 里的 category、categoryId 或 category_id 字段筛选。"
           },
           "response": []
         },

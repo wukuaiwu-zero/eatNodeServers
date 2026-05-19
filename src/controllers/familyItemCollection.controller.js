@@ -121,7 +121,10 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
-      const data = await service.listItemsByDevice(device.deviceId);
+      const data = await service.listItemsByDevice(device.deviceId, {
+        category: getInput(req, 'category'),
+        categoryId: getInput(req, 'categoryId') || getInput(req, 'category_id')
+      });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });

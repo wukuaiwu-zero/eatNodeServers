@@ -174,6 +174,10 @@ X-Device-Secret: {{deviceSecret}}
 }
 ```
 
+### POST /api/updateFamilyShoppingItem
+
+请求体同保存接口。按 `familyCode + id` 覆盖同一条购物清单。
+
 ### GET /api/getFamilyShoppingItem?id=shop_tomato
 
 查询单条购物清单。
@@ -181,6 +185,10 @@ X-Device-Secret: {{deviceSecret}}
 ### GET /api/getFamilyShoppingItems
 
 查询当前设备所属家庭的购物清单。
+
+### GET /api/getFamilyShoppingItems?category=蔬菜
+
+按分类查询当前设备所属家庭的购物清单。也支持 `categoryId`，会匹配条目 JSON 中的 `category`、`categoryId` 或 `category_id`。
 
 ### GET /api/getFamilyShoppingChanges?since=0
 
@@ -212,6 +220,10 @@ X-Device-Secret: {{deviceSecret}}
 }
 ```
 
+### POST /api/updateFamilyIngredientItem
+
+请求体同保存接口。按 `familyCode + id` 覆盖同一条食材库存。
+
 ### GET /api/getFamilyIngredientItem?id=ingredient_coriander
 
 查询单条食材。
@@ -219,6 +231,10 @@ X-Device-Secret: {{deviceSecret}}
 ### GET /api/getFamilyIngredientItems
 
 查询当前设备所属家庭的食材库。
+
+### GET /api/getFamilyIngredientItems?category=蔬菜
+
+按分类查询当前设备所属家庭的食材库。也支持 `categoryId`，会匹配条目 JSON 中的 `category`、`categoryId` 或 `category_id`。
 
 ### GET /api/getFamilyIngredientChanges?since=0
 

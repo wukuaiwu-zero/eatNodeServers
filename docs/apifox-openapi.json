@@ -531,7 +531,7 @@
         "tags": [
           "购物清单"
         ],
-        "summary": "查询购物清单列表",
+        "summary": "查询购物清单列表，可按分类筛选",
         "security": [
           {
             "deviceAuth": []
@@ -548,7 +548,15 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CategoryQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CategoryIdQuery"
+          }
+        ]
       }
     },
     "/api/getFamilyShoppingChanges": {
@@ -700,7 +708,7 @@
         "tags": [
           "食材库"
         ],
-        "summary": "查询食材库列表",
+        "summary": "查询食材库列表，可按分类筛选",
         "security": [
           {
             "deviceAuth": []
@@ -717,7 +725,15 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/CategoryQuery"
+          },
+          {
+            "$ref": "#/components/parameters/CategoryIdQuery"
+          }
+        ]
       }
     },
     "/api/getFamilyIngredientChanges": {
@@ -825,6 +841,98 @@
           }
         }
       }
+    },
+    "/api/updateFamilyShoppingItem": {
+      "post": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "修改购物清单条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveShoppingItemRequest"
+              },
+              "example": {
+                "familyCode": "fam_xxx",
+                "shoppingItemJson": {
+                  "id": "shop_tomato",
+                  "name": "番茄",
+                  "num": "3个",
+                  "category": "蔬菜",
+                  "price": "6",
+                  "done": false
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "修改成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/updateFamilyIngredientItem": {
+      "post": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "修改食材库条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveIngredientItemRequest"
+              },
+              "example": {
+                "familyCode": "fam_xxx",
+                "ingredientItemJson": {
+                  "id": "ingredient_rice",
+                  "name": "大米",
+                  "num": "5kg",
+                  "category": "主食",
+                  "price": "35",
+                  "done": false
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "修改成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -867,6 +975,26 @@
           "default": 0,
           "example": 0
         }
+      },
+      "CategoryQuery": {
+        "name": "category",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "description": "按条目 JSON 里的 category 分类筛选"
+      },
+      "CategoryIdQuery": {
+        "name": "categoryId",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "description": "按条目 JSON 里的 categoryId 或 category_id 分类筛选"
       }
     },
     "responses": {
