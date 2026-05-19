@@ -168,7 +168,7 @@ X-Device-Secret: {{deviceSecret}}
     "id": "shop_tomato",
     "name": "番茄",
     "num": "3个",
-    "category": "蔬菜",
+    "categoryId": "shopping_cat_vegetable",
     "done": false
   }
 }
@@ -186,9 +186,9 @@ X-Device-Secret: {{deviceSecret}}
 
 查询当前设备所属家庭的购物清单。
 
-### GET /api/getFamilyShoppingItems?category=蔬菜
+### GET /api/getFamilyShoppingItems?categoryId=cat_vegetable
 
-按分类查询当前设备所属家庭的购物清单。也支持 `categoryId`，会匹配条目 JSON 中的 `category`、`categoryId` 或 `category_id`。
+按分类 ID 查询当前设备所属家庭的购物清单。
 
 ### GET /api/getFamilyShoppingChanges?since=0
 
@@ -202,6 +202,18 @@ X-Device-Secret: {{deviceSecret}}
 }
 ```
 
+### POST /api/deleteFamilyShoppingItems
+
+```json
+{
+  "ids": ["shop_tomato", "shop_milk"]
+}
+```
+
+### POST /api/clearPurchasedFamilyShoppingItems
+
+清除当前设备所属家庭里 `done: true` 的购物清单。
+
 ## 食材库
 
 ### POST /api/saveFamilyIngredientItem
@@ -213,7 +225,7 @@ X-Device-Secret: {{deviceSecret}}
     "id": "ingredient_coriander",
     "name": "香菜",
     "num": "1把",
-    "category": "蔬菜",
+    "categoryId": "ingredient_cat_vegetable",
     "expire_date": "2026-05-20",
     "has": true
   }
@@ -232,9 +244,9 @@ X-Device-Secret: {{deviceSecret}}
 
 查询当前设备所属家庭的食材库。
 
-### GET /api/getFamilyIngredientItems?category=蔬菜
+### GET /api/getFamilyIngredientItems?categoryId=cat_staple
 
-按分类查询当前设备所属家庭的食材库。也支持 `categoryId`，会匹配条目 JSON 中的 `category`、`categoryId` 或 `category_id`。
+按分类 ID 查询当前设备所属家庭的食材库。
 
 ### GET /api/getFamilyIngredientChanges?since=0
 
@@ -247,6 +259,18 @@ X-Device-Secret: {{deviceSecret}}
   "id": "ingredient_coriander"
 }
 ```
+
+### POST /api/deleteFamilyIngredientItems
+
+```json
+{
+  "ids": ["ingredient_coriander", "ingredient_rice"]
+}
+```
+
+### POST /api/clearExpiredFamilyIngredientItems
+
+清除当前设备所属家庭里 `expire_date < CURDATE()` 的食材。
 
 ## 分类
 

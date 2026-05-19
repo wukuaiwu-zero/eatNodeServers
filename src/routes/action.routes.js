@@ -55,6 +55,8 @@ router.get('/getFamilyShoppingItem', familyShoppingController.getItem);
 router.get('/getFamilyShoppingItems', familyShoppingController.listItemsByMember);
 router.get('/getFamilyShoppingChanges', familyShoppingController.getChangesByMember);
 router.post('/deleteFamilyShoppingItem', writeLimiter, familyShoppingController.deleteItem);
+router.post('/deleteFamilyShoppingItems', writeLimiter, familyShoppingController.deleteItems);
+router.post('/clearPurchasedFamilyShoppingItems', writeLimiter, familyShoppingController.clearPurchasedItems);
 
 router.post('/saveFamilyIngredientItem', writeLimiter, familyIngredientController.upsertItem);
 router.post('/updateFamilyIngredientItem', writeLimiter, familyIngredientController.upsertItem);
@@ -62,6 +64,8 @@ router.get('/getFamilyIngredientItem', familyIngredientController.getItem);
 router.get('/getFamilyIngredientItems', familyIngredientController.listItemsByMember);
 router.get('/getFamilyIngredientChanges', familyIngredientController.getChangesByMember);
 router.post('/deleteFamilyIngredientItem', writeLimiter, familyIngredientController.deleteItem);
+router.post('/deleteFamilyIngredientItems', writeLimiter, familyIngredientController.deleteItems);
+router.post('/clearExpiredFamilyIngredientItems', writeLimiter, familyIngredientController.clearExpiredItems);
 
 router.post('/saveFamilyCategory', writeLimiter, familyCategorySyncController.saveCategory);
 

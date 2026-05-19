@@ -655,7 +655,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"3个\",\n    \"category\": \"蔬菜\",\n    \"done\": false\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"3个\",\n    \"categoryId\": \"shopping_cat_vegetable\",\n    \"done\": false\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -700,7 +700,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"5个\",\n    \"category\": \"蔬菜\",\n    \"done\": true\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingItemJson\": {\n    \"id\": \"shop_tomato\",\n    \"name\": \"番茄\",\n    \"num\": \"5个\",\n    \"categoryId\": \"shopping_cat_vegetable\",\n    \"done\": true\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -794,7 +794,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyShoppingItems?category=%E8%94%AC%E8%8F%9C",
+              "raw": "{{baseUrl}}/api/getFamilyShoppingItems?categoryId=shopping_cat_vegetable",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -804,12 +804,12 @@
               ],
               "query": [
                 {
-                  "key": "category",
-                  "value": "蔬菜"
+                  "key": "categoryId",
+                  "value": "shopping_cat_vegetable"
                 }
               ]
             },
-            "description": "按条目 JSON 里的 category、categoryId 或 category_id 字段筛选。"
+            "description": "按 family_shopping_items.category_id 筛选。"
           },
           "response": []
         },
@@ -893,6 +893,82 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "批量删除购物清单条目",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyShoppingItems",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyShoppingItems"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"shop_tomato\", \"shop_milk\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "清除已购购物清单",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/clearPurchasedFamilyShoppingItems",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clearPurchasedFamilyShoppingItems"
+              ],
+              "query": []
+            },
+            "description": "软删除 done 为 true 的购物清单条目。"
+          },
+          "response": []
         }
       ]
     },
@@ -934,7 +1010,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_coriander\",\n    \"name\": \"香菜\",\n    \"num\": \"1把\",\n    \"category\": \"蔬菜\",\n    \"expire_date\": \"2026-05-20\",\n    \"has\": true\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_coriander\",\n    \"name\": \"香菜\",\n    \"num\": \"1把\",\n    \"categoryId\": \"ingredient_cat_vegetable\",\n    \"expire_date\": \"2026-06-01\",\n    \"has\": true\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -979,7 +1055,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_coriander\",\n    \"name\": \"香菜\",\n    \"num\": \"2把\",\n    \"category\": \"蔬菜\",\n    \"expire_date\": \"2026-05-21\",\n    \"has\": true\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientItemJson\": {\n    \"id\": \"ingredient_coriander\",\n    \"name\": \"香菜\",\n    \"num\": \"2把\",\n    \"categoryId\": \"ingredient_cat_vegetable\",\n    \"expire_date\": \"2026-06-02\",\n    \"has\": true\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1073,7 +1149,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyIngredientItems?category=%E8%94%AC%E8%8F%9C",
+              "raw": "{{baseUrl}}/api/getFamilyIngredientItems?categoryId=ingredient_cat_staple",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1083,12 +1159,12 @@
               ],
               "query": [
                 {
-                  "key": "category",
-                  "value": "蔬菜"
+                  "key": "categoryId",
+                  "value": "ingredient_cat_staple"
                 }
               ]
             },
-            "description": "按条目 JSON 里的 category、categoryId 或 category_id 字段筛选。"
+            "description": "按 family_ingredient_items.category_id 筛选。"
           },
           "response": []
         },
@@ -1170,6 +1246,82 @@
                 }
               }
             }
+          },
+          "response": []
+        },
+        {
+          "name": "批量删除食材库条目",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyIngredientItems",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyIngredientItems"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"ingredient_coriander\", \"ingredient_rice\"]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "清除过期食材",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/clearExpiredFamilyIngredientItems",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clearExpiredFamilyIngredientItems"
+              ],
+              "query": []
+            },
+            "description": "软删除 expire_date < CURDATE() 的食材。"
           },
           "response": []
         }

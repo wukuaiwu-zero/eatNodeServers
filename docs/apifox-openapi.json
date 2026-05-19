@@ -474,7 +474,7 @@
                   "id": "shop_tomato",
                   "name": "番茄",
                   "num": "3个",
-                  "category": "蔬菜",
+                  "categoryId": "shopping_cat_vegetable",
                   "price": "6",
                   "done": false
                 }
@@ -550,9 +550,6 @@
           }
         },
         "parameters": [
-          {
-            "$ref": "#/components/parameters/CategoryQuery"
-          },
           {
             "$ref": "#/components/parameters/CategoryIdQuery"
           }
@@ -651,9 +648,10 @@
                   "id": "ingredient_rice",
                   "name": "大米",
                   "num": "5kg",
-                  "category": "主食",
+                  "categoryId": "ingredient_cat_staple",
                   "price": "35",
-                  "done": false
+                  "has": true,
+                  "expire_date": "2026-06-01"
                 }
               }
             }
@@ -727,9 +725,6 @@
           }
         },
         "parameters": [
-          {
-            "$ref": "#/components/parameters/CategoryQuery"
-          },
           {
             "$ref": "#/components/parameters/CategoryIdQuery"
           }
@@ -865,10 +860,10 @@
                 "shoppingItemJson": {
                   "id": "shop_tomato",
                   "name": "番茄",
-                  "num": "3个",
-                  "category": "蔬菜",
-                  "price": "6",
-                  "done": false
+                  "num": "5个",
+                  "categoryId": "shopping_cat_vegetable",
+                  "price": "10",
+                  "done": true
                 }
               }
             }
@@ -911,10 +906,11 @@
                 "ingredientItemJson": {
                   "id": "ingredient_rice",
                   "name": "大米",
-                  "num": "5kg",
-                  "category": "主食",
-                  "price": "35",
-                  "done": false
+                  "num": "3kg",
+                  "categoryId": "ingredient_cat_staple",
+                  "price": "22",
+                  "has": true,
+                  "expire_date": "2026-06-01"
                 }
               }
             }
@@ -923,6 +919,139 @@
         "responses": {
           "200": {
             "description": "修改成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deleteFamilyShoppingItems": {
+      "post": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "批量删除购物清单条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteItemsRequest"
+              },
+              "example": {
+                "ids": [
+                  "shop_tomato",
+                  "shop_milk"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "处理成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clearPurchasedFamilyShoppingItems": {
+      "post": {
+        "tags": [
+          "购物清单"
+        ],
+        "summary": "清除已购购物清单",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "处理成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deleteFamilyIngredientItems": {
+      "post": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "批量删除食材库条目",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteItemsRequest"
+              },
+              "example": {
+                "ids": [
+                  "ingredient_rice",
+                  "ingredient_salt"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "处理成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/clearExpiredFamilyIngredientItems": {
+      "post": {
+        "tags": [
+          "食材库"
+        ],
+        "summary": "清除过期食材",
+        "description": "软删除 expire_date < CURDATE() 的食材。",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "处理成功",
             "content": {
               "application/json": {
                 "schema": {
@@ -976,16 +1105,6 @@
           "example": 0
         }
       },
-      "CategoryQuery": {
-        "name": "category",
-        "in": "query",
-        "required": false,
-        "schema": {
-          "type": "string",
-          "maxLength": 100
-        },
-        "description": "按条目 JSON 里的 category 分类筛选"
-      },
       "CategoryIdQuery": {
         "name": "categoryId",
         "in": "query",
@@ -994,7 +1113,7 @@
           "type": "string",
           "maxLength": 100
         },
-        "description": "按条目 JSON 里的 categoryId 或 category_id 分类筛选"
+        "description": "按 category_id 分类 ID 筛选"
       }
     },
     "responses": {
@@ -1245,11 +1364,16 @@
           },
           "num": {
             "type": "string",
+            "example": "3个",
+            "description": "数量，后端存储为 quantity"
+          },
+          "quantity": {
+            "type": "string",
             "example": "3个"
           },
-          "category": {
+          "categoryId": {
             "type": "string",
-            "example": "蔬菜"
+            "example": "shopping_cat_vegetable"
           },
           "price": {
             "type": "string",
@@ -1258,6 +1382,14 @@
           "done": {
             "type": "boolean",
             "example": false
+          },
+          "has": {
+            "type": "boolean",
+            "example": true
+          },
+          "expire_date": {
+            "type": "string",
+            "example": "2026-06-01"
           }
         },
         "additionalProperties": true
@@ -1427,6 +1559,25 @@
           "message": {
             "type": "string",
             "example": "familyCode is required"
+          }
+        }
+      },
+      "DeleteItemsRequest": {
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "example": [
+              "shop_tomato",
+              "shop_milk"
+            ]
           }
         }
       }

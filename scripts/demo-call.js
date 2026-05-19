@@ -103,7 +103,7 @@ async function main() {
         shoppingItemJson: {
           name: '番茄',
           num: '3个',
-          category: '蔬菜',
+          categoryId: 'shopping_cat_vegetable',
           price: '6',
           done: false,
           id: `shop_${Date.now()}`

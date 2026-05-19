@@ -71,25 +71,18 @@ ON DUPLICATE KEY UPDATE
   recipe_json = VALUES(recipe_json),
   updated_at = CURRENT_TIMESTAMP;
 
--- 5. 购物清单按 item 存储。item_json 保留前端原始字段，
--- item_id / family_code / version / deleted_at 则服务于后端同步逻辑。
+-- 5. 购物清单按字段存储，item_id / family_code / version / deleted_at 服务于后端同步逻辑。
 INSERT INTO family_shopping_items
-  (item_id, family_code, item_json, create_time, created_by, updated_by, version, deleted_at)
+  (item_id, family_code, name, quantity, category_id, price, done, create_time, created_by, updated_by, version, deleted_at)
 VALUES
   (
     'shop_tomato',
     'default_family',
-    JSON_OBJECT(
-      'name', '番茄',
-      'num', '3个',
-      'category', '蔬菜',
-      'price', '6',
-      'done', false,
-      'family_id', 'default_family',
-      '_id', 'shop_tomato',
-      'create_time', 1778294348928,
-      'id', 'shop_tomato'
-    ),
+    '番茄',
+    '3个',
+    'shopping_cat_vegetable',
+    '6',
+    0,
     1778294348928,
     'demo_device',
     'demo_device',
@@ -99,17 +92,11 @@ VALUES
   (
     'shop_egg',
     'default_family',
-    JSON_OBJECT(
-      'name', '鸡蛋',
-      'num', '1盒',
-      'category', '蛋奶',
-      'price', '12',
-      'done', true,
-      'family_id', 'default_family',
-      '_id', 'shop_egg',
-      'create_time', 1778294358928,
-      'id', 'shop_egg'
-    ),
+    '鸡蛋',
+    '1盒',
+    'shopping_cat_egg_dairy',
+    '12',
+    1,
     1778294358928,
     'demo_device',
     'demo_device',
@@ -117,32 +104,30 @@ VALUES
     NULL
   )
 ON DUPLICATE KEY UPDATE
-  item_json = VALUES(item_json),
+  name = VALUES(name),
+  quantity = VALUES(quantity),
+  category_id = VALUES(category_id),
+  price = VALUES(price),
+  done = VALUES(done),
   create_time = VALUES(create_time),
   updated_by = VALUES(updated_by),
   version = version + 1,
   deleted_at = NULL,
   updated_at = CURRENT_TIMESTAMP;
 
--- 6. 食材库和购物清单字段目前相同，但单独放在 family_ingredient_items。
--- 这样以后比如食材库要加保质期、库存预警，不会影响购物清单。
+-- 6. 食材库按字段存储，方便按分类、库存和过期时间查询。
 INSERT INTO family_ingredient_items
-  (item_id, family_code, item_json, create_time, created_by, updated_by, version, deleted_at)
+  (item_id, family_code, name, quantity, category_id, price, has_stock, expire_date, create_time, created_by, updated_by, version, deleted_at)
 VALUES
   (
     'ingredient_rice',
     'default_family',
-    JSON_OBJECT(
-      'name', '大米',
-      'num', '5kg',
-      'category', '主食',
-      'price', '35',
-      'done', false,
-      'family_id', 'default_family',
-      '_id', 'ingredient_rice',
-      'create_time', 1778294368928,
-      'id', 'ingredient_rice'
-    ),
+    '大米',
+    '5kg',
+    'ingredient_cat_staple',
+    '35',
+    1,
+    NULL,
     1778294368928,
     'demo_device',
     'demo_device',
@@ -152,17 +137,12 @@ VALUES
   (
     'ingredient_garlic',
     'default_family',
-    JSON_OBJECT(
-      'name', '大蒜',
-      'num', '1袋',
-      'category', '调味',
-      'price', '5',
-      'done', false,
-      'family_id', 'default_family',
-      '_id', 'ingredient_garlic',
-      'create_time', 1778294378928,
-      'id', 'ingredient_garlic'
-    ),
+    '大蒜',
+    '1袋',
+    'ingredient_cat_seasoning',
+    '5',
+    1,
+    NULL,
     1778294378928,
     'demo_device',
     'demo_device',
@@ -170,7 +150,12 @@ VALUES
     NULL
   )
 ON DUPLICATE KEY UPDATE
-  item_json = VALUES(item_json),
+  name = VALUES(name),
+  quantity = VALUES(quantity),
+  category_id = VALUES(category_id),
+  price = VALUES(price),
+  has_stock = VALUES(has_stock),
+  expire_date = VALUES(expire_date),
   create_time = VALUES(create_time),
   updated_by = VALUES(updated_by),
   version = version + 1,

@@ -23,7 +23,7 @@ POST /api/saveFamilyShoppingItem
   "shoppingItemJson": {
     "name": "番茄",
     "num": "3个",
-    "category": "蔬菜",
+    "categoryId": "shopping_cat_vegetable",
     "price": "6",
     "done": false,
     "id": "shop_tomato"
@@ -48,7 +48,7 @@ POST /api/updateFamilyShoppingItem
     "id": "shop_tomato",
     "name": "番茄",
     "num": "5个",
-    "category": "蔬菜",
+    "categoryId": "shopping_cat_vegetable",
     "price": "10",
     "done": true
   }
@@ -74,11 +74,10 @@ GET /api/getFamilyShoppingItems
 可按分类筛选：
 
 ```text
-GET /api/getFamilyShoppingItems?category=蔬菜
 GET /api/getFamilyShoppingItems?categoryId=cat_vegetable
 ```
 
-服务端会匹配条目 JSON 里的 `category`、`categoryId` 或 `category_id` 字段。
+请传 `categoryId`。购物清单已经按字段存储，服务端直接匹配 `family_shopping_items.category_id`。
 
 ## 查询购物清单增量
 
@@ -111,3 +110,27 @@ POST /api/deleteFamilyShoppingItem
   "id": "shop_tomato"
 }
 ```
+
+## 批量删除购物清单条目
+
+```text
+POST /api/deleteFamilyShoppingItems
+```
+
+请求：
+
+```json
+{
+  "ids": ["shop_tomato", "shop_milk"]
+}
+```
+
+删除采用软删除。不存在的 ID 会跳过，返回实际删除数量 `deletedCount`。
+
+## 清除已购购物清单
+
+```text
+POST /api/clearPurchasedFamilyShoppingItems
+```
+
+按当前设备所属家庭软删除 `done: true` 的购物清单条目，返回实际删除数量 `deletedCount`。

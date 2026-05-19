@@ -30,6 +30,20 @@ function validateText(value, fieldName, maxLength) {
   return null;
 }
 
+function parseItemIds(req) {
+  const value = getInput(req, 'ids') || getInput(req, 'itemIds');
+
+  if (Array.isArray(value)) {
+    return value.map((itemId) => normalizeText(String(itemId))).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value.split(',').map(normalizeText).filter(Boolean);
+  }
+
+  return [];
+}
+
 function getItemLabel(itemFieldName) {
   if (itemFieldName === 'shoppingItemJson') {
     return '购物清单条目';
@@ -122,7 +136,6 @@ function createFamilyItemCollectionController(service, itemFieldName) {
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
       const data = await service.listItemsByDevice(device.deviceId, {
-        category: getInput(req, 'category'),
         categoryId: getInput(req, 'categoryId') || getInput(req, 'category_id')
       });
 
@@ -179,12 +192,73 @@ function createFamilyItemCollectionController(service, itemFieldName) {
     }
   }
 
+  async function deleteItems(req, res, next) {
+    try {
+      const itemIds = parseItemIds(req);
+      const { deviceId, deviceSecret } = getDeviceCredentials(req);
+      const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+      if (itemIds.length === 0) {
+        return res.status(400).json({ message: '请填写条目 ID 列表' });
+      }
+
+      if (itemIds.some((itemId) => itemId.length > ITEM_ID_MAX_LENGTH)) {
+        return res.status(400).json({ message: `条目 ID 太长了，不能超过 ${ITEM_ID_MAX_LENGTH} 个字符` });
+      }
+
+      const data = await service.deleteItemsByDevice(device.deviceId, itemIds);
+
+      if (!data) {
+        return res.status(404).json({ message: '家庭成员不存在' });
+      }
+
+      return res.json({ data });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async function clearExpiredItems(req, res, next) {
+    try {
+      const { deviceId, deviceSecret } = getDeviceCredentials(req);
+      const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+      const data = await service.clearExpiredItemsByDevice(device.deviceId);
+
+      if (!data) {
+        return res.status(404).json({ message: '家庭成员不存在' });
+      }
+
+      return res.json({ data });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  async function clearPurchasedItems(req, res, next) {
+    try {
+      const { deviceId, deviceSecret } = getDeviceCredentials(req);
+      const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+      const data = await service.clearPurchasedItemsByDevice(device.deviceId);
+
+      if (!data) {
+        return res.status(404).json({ message: '家庭成员不存在' });
+      }
+
+      return res.json({ data });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
   return {
     upsertItem,
     getItem,
     listItemsByMember,
     getChangesByMember,
-    deleteItem
+    deleteItem,
+    deleteItems,
+    clearExpiredItems,
+    clearPurchasedItems
   };
 }
 
