@@ -170,28 +170,70 @@ async function bindMemberToInitialFamily(memberCode, familyCode, options = {}) {
 }
 
 async function bindDeviceToFamily(deviceId, familyCode, role = 'member') {
-  const member = await bindMemberToInitialFamily(deviceId, familyCode, {
-    deviceId,
-    role
-  });
-  familyService.grantDeviceAccessToFamily(deviceId, familyCode);
-
+  await familyService.ensureFamilyExists(familyCode);
   if (env.useMockDb) {
-    const row = mockFamilyMembers.get(member.memberCode);
+    const row = mockFamilyMembers.get(deviceId);
+
+    if (!row) {
+      const now = new Date().toISOString();
+      const member = {
+        id: mockFamilyMembers.size + 1,
+        member_code: deviceId,
+        family_code: familyCode,
+        device_id: deviceId,
+        role,
+        joined_family: 1,
+        revoked_at: null,
+        created_at: now,
+        updated_at: now
+      };
+      mockFamilyMembers.set(deviceId, member);
+      familyService.grantDeviceAccessToFamily(deviceId, familyCode);
+      return toFamilyMember(member);
+    }
+
+    familyService.revokeDeviceAccessFromFamily(deviceId, row.family_code);
+    row.family_code = familyCode;
+    row.device_id = deviceId;
+    row.role = role;
     row.joined_family = 1;
+    row.revoked_at = null;
     row.updated_at = new Date().toISOString();
-    mockFamilyMembers.set(member.memberCode, row);
+    mockFamilyMembers.set(deviceId, row);
+    familyService.grantDeviceAccessToFamily(deviceId, familyCode);
     return toFamilyMember(row);
+  }
+
+  const currentRows = await query(
+    `SELECT id
+     FROM family_members
+     WHERE member_code = ?
+     LIMIT 1`,
+    [deviceId]
+  );
+
+  if (!currentRows[0]) {
+    await query(
+      `INSERT INTO family_members (member_code, family_code, device_id, role, joined_family)
+       VALUES (?, ?, ?, ?, 1)`,
+      [deviceId, familyCode, deviceId, role]
+    );
+    return getFamilyMemberByCode(deviceId);
   }
 
   await query(
     `UPDATE family_members
-     SET joined_family = 1
+     SET family_code = ?,
+         device_id = ?,
+         role = ?,
+         joined_family = 1,
+         revoked_at = NULL,
+         updated_at = CURRENT_TIMESTAMP
      WHERE member_code = ?`,
-    [member.memberCode]
+    [familyCode, deviceId, role, deviceId]
   );
 
-  return getFamilyMemberByCode(member.memberCode);
+  return getFamilyMemberByCode(deviceId);
 }
 
 async function joinFamily(memberCode, familyCode) {
@@ -224,12 +266,9 @@ async function joinFamily(memberCode, familyCode) {
       return toFamilyMember(row);
     }
 
-    if (current.family_code !== familyCode && current.joined_family) {
-      throw createConflictError('这个成员已经加入家庭，不能切换到其他家庭');
-    }
-
     current.family_code = familyCode;
     current.joined_family = 1;
+    current.revoked_at = null;
     current.updated_at = now;
     mockFamilyMembers.set(memberCode, current);
     return toFamilyMember(current);
@@ -246,13 +285,9 @@ async function joinFamily(memberCode, familyCode) {
     return getFamilyMemberByCode(memberCode);
   }
 
-  if (current.familyCode !== familyCode && current.joinedFamily) {
-    throw createConflictError('这个成员已经加入家庭，不能切换到其他家庭');
-  }
-
   await query(
     `UPDATE family_members
-     SET family_code = ?, joined_family = 1
+     SET family_code = ?, joined_family = 1, revoked_at = NULL
      WHERE member_code = ?`,
     [familyCode, memberCode]
   );

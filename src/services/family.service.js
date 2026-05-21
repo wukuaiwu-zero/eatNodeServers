@@ -46,6 +46,7 @@ function toFamily(row) {
     id: row.id,
     familyCode: row.family_code,
     familyName: row.family_name,
+    avatarUrl: row.avatar_url || null,
     isDeleted: Boolean(row.is_deleted),
     createdByDeviceId: row.created_by_device_id || null,
     createdAt: row.created_at,
@@ -69,6 +70,7 @@ async function createFamily(familyCode, familyName = null, options = {}) {
         ? deviceService.hashSecret(options.familySecret)
         : null,
       family_name: familyName,
+      avatar_url: options.avatarUrl || null,
       is_deleted: 0,
       created_by_device_id: options.deviceId || null,
       created_at: now,
@@ -91,12 +93,13 @@ async function createFamily(familyCode, familyName = null, options = {}) {
   }
 
   await query(
-    `INSERT INTO families (family_code, family_secret_hash, family_name, created_by_device_id)
-     VALUES (?, ?, ?, ?)`,
+    `INSERT INTO families (family_code, family_secret_hash, family_name, avatar_url, created_by_device_id)
+     VALUES (?, ?, ?, ?, ?)`,
     [
       familyCode,
       options.familySecret ? deviceService.hashSecret(options.familySecret) : null,
       familyName,
+      options.avatarUrl || null,
       options.deviceId || null
     ]
   );
@@ -104,12 +107,13 @@ async function createFamily(familyCode, familyName = null, options = {}) {
   return getFamilyByCode(familyCode);
 }
 
-async function createFamilyForDevice(deviceId, familyName = null) {
+async function createFamilyForDevice(deviceId, familyName = null, options = {}) {
   const familyCode = createFamilyCode();
   const familySecret = deviceService.createDeviceSecret();
   const family = await createFamily(familyCode, familyName, {
     deviceId,
-    familySecret
+    familySecret,
+    avatarUrl: options.avatarUrl
   });
   grantDeviceAccessToFamily(deviceId, family.familyCode);
 
@@ -136,7 +140,7 @@ async function getFamilyByCode(familyCode) {
   }
 
   const rows = await query(
-    `SELECT id, family_code, family_name, is_deleted, created_by_device_id, created_at, updated_at
+    `SELECT id, family_code, family_name, avatar_url, is_deleted, created_by_device_id, created_at, updated_at
      FROM families
      WHERE family_code = ? AND is_deleted = 0`,
     [familyCode]
@@ -145,7 +149,7 @@ async function getFamilyByCode(familyCode) {
   return toFamily(rows[0]);
 }
 
-async function updateFamily(familyCode, familyName) {
+async function updateFamily(familyCode, familyName, avatarUrl = undefined) {
   if (env.useMockDb) {
     const current = mockFamilies.get(familyCode);
 
@@ -153,18 +157,38 @@ async function updateFamily(familyCode, familyName) {
       return null;
     }
 
-    current.family_name = familyName;
+    if (familyName !== undefined) {
+      current.family_name = familyName;
+    }
+    if (avatarUrl !== undefined) {
+      current.avatar_url = avatarUrl || null;
+    }
     current.updated_at = new Date().toISOString();
     mockFamilies.set(familyCode, current);
     return toFamily(current);
   }
 
-  await query(
-    `UPDATE families
-     SET family_name = ?
-     WHERE family_code = ? AND is_deleted = 0`,
-    [familyName, familyCode]
-  );
+  const updates = [];
+  const params = [];
+
+  if (familyName !== undefined) {
+    updates.push('family_name = ?');
+    params.push(familyName);
+  }
+
+  if (avatarUrl !== undefined) {
+    updates.push('avatar_url = ?');
+    params.push(avatarUrl || null);
+  }
+
+  if (updates.length) {
+    await query(
+      `UPDATE families
+       SET ${updates.join(', ')}
+       WHERE family_code = ? AND is_deleted = 0`,
+      [...params, familyCode]
+    );
+  }
 
   return getFamilyByCode(familyCode);
 }
@@ -191,7 +215,7 @@ async function deleteFamily(familyCode) {
   );
 
   const rows = await query(
-    `SELECT id, family_code, family_name, is_deleted, created_by_device_id, created_at, updated_at
+    `SELECT id, family_code, family_name, avatar_url, is_deleted, created_by_device_id, created_at, updated_at
      FROM families
      WHERE family_code = ?`,
     [familyCode]

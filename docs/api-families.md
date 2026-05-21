@@ -40,7 +40,8 @@ POST /api/createFamily
 
 ```json
 {
-  "familyName": "默认家庭"
+  "familyName": "默认家庭",
+  "avatarUrl": "/uploads/family-avatars/demo.png"
 }
 ```
 
@@ -52,6 +53,7 @@ POST /api/createFamily
     "family": {
       "familyCode": "fam_xxx",
       "familyName": "默认家庭",
+      "avatarUrl": "/uploads/family-avatars/demo.png",
       "createdByDeviceId": "dev_xxx"
     },
     "familySecret": "家庭密钥，只返回一次",
@@ -118,6 +120,8 @@ POST /api/joinFamily
 
 邀请码在过期前可重复使用，适合一次分享给多个家庭成员。
 
+如果当前设备已经在另一个家庭，加入成功后当前成员关系会切换到邀请码对应的 `familyCode`。
+
 ## 查询/修改/删除家庭
 
 这些接口仍使用 `familyCode` 定位家庭，但必须带设备凭证，且设备必须已加入该家庭：
@@ -127,4 +131,14 @@ GET /api/getFamily?familyCode=fam_xxx
 POST /api/updateFamily
 POST /api/deleteFamily
 GET /api/getFamilyMembers?familyCode=fam_xxx
+```
+
+修改家庭时可传：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "familyName": "新的家庭名",
+  "avatarUrl": "/uploads/family-avatars/new.png"
+}
 ```

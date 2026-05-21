@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS families (
   family_code VARCHAR(100) NOT NULL,
   family_secret_hash VARCHAR(255) DEFAULT NULL,
   family_name VARCHAR(100) DEFAULT NULL,
+  avatar_url VARCHAR(255) DEFAULT NULL,
   is_deleted TINYINT(1) NOT NULL DEFAULT 0,
   created_by_device_id VARCHAR(100) DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

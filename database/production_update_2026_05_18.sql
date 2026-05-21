@@ -25,6 +25,7 @@ END//
 DELIMITER ;
 
 CALL add_column_if_missing('family_recipes', 'cover_url', 'cover_url VARCHAR(255) DEFAULT NULL AFTER recipe_json');
+CALL add_column_if_missing('families', 'avatar_url', 'avatar_url VARCHAR(255) DEFAULT NULL AFTER family_name');
 CALL add_column_if_missing('family_members', 'member_name', 'member_name VARCHAR(100) DEFAULT NULL AFTER device_id');
 CALL add_column_if_missing('family_members', 'title', 'title VARCHAR(100) DEFAULT NULL AFTER member_name');
 CALL add_column_if_missing('family_members', 'avatar_url', 'avatar_url VARCHAR(255) DEFAULT NULL AFTER title');

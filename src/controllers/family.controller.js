@@ -56,15 +56,23 @@ function validateMaxLength(value, fieldName, maxLength) {
 async function createFamily(req, res, next) {
   try {
     const familyName = normalizeNullableText(req.body.familyName);
+    const avatarUrl = normalizeNullableText(req.body.avatarUrl || req.body.avatar_url);
     const familyNameError = validateFamilyName(familyName);
+    const avatarUrlError = validateMaxLength(avatarUrl, '家庭头像 URL', AVATAR_URL_MAX_LENGTH);
 
     if (familyNameError) {
       return res.status(400).json({ message: familyNameError });
     }
 
+    if (avatarUrlError) {
+      return res.status(400).json({ message: avatarUrlError });
+    }
+
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
-    const data = await familyService.createFamilyForDevice(device.deviceId, familyName);
+    const data = await familyService.createFamilyForDevice(device.deviceId, familyName, {
+      avatarUrl
+    });
     const member = await familyRecipeService.bindDeviceToFamily(device.deviceId, data.family.familyCode, 'owner');
     const invite = await familyService.createFamilyInvite(data.family.familyCode);
 
@@ -108,9 +116,17 @@ async function getFamily(req, res, next) {
 async function updateFamily(req, res, next) {
   try {
     const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
-    const familyName = normalizeNullableText(req.body.familyName);
+    const hasFamilyNameInput = req.body.familyName !== undefined;
+    const familyName = hasFamilyNameInput ? normalizeNullableText(req.body.familyName) : undefined;
+    const hasAvatarUrlInput = req.body.avatarUrl !== undefined || req.body.avatar_url !== undefined;
+    const avatarUrl = hasAvatarUrlInput
+      ? normalizeNullableText(req.body.avatarUrl || req.body.avatar_url)
+      : undefined;
     const familyCodeError = validateFamilyCode(familyCode);
-    const familyNameError = validateFamilyName(familyName);
+    const familyNameError = hasFamilyNameInput ? validateFamilyName(familyName) : null;
+    const avatarUrlError = hasAvatarUrlInput
+      ? validateMaxLength(avatarUrl, '家庭头像 URL', AVATAR_URL_MAX_LENGTH)
+      : null;
 
     if (familyCodeError) {
       return res.status(400).json({ message: familyCodeError });
@@ -120,11 +136,15 @@ async function updateFamily(req, res, next) {
       return res.status(400).json({ message: familyNameError });
     }
 
+    if (avatarUrlError) {
+      return res.status(400).json({ message: avatarUrlError });
+    }
+
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
     await familyService.assertDeviceCanAccessFamily(device.deviceId, familyCode);
 
-    const family = await familyService.updateFamily(familyCode, familyName);
+    const family = await familyService.updateFamily(familyCode, familyName, avatarUrl);
 
     if (!family) {
       return res.status(404).json({ message: '家庭不存在' });
