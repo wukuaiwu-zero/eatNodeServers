@@ -303,6 +303,12 @@ function grantDeviceAccessToFamily(deviceId, familyCode) {
   }
 }
 
+function revokeDeviceAccessFromFamily(deviceId, familyCode) {
+  if (env.useMockDb && deviceId && familyCode) {
+    mockFamilyAccess.delete(getAccessKey(deviceId, familyCode));
+  }
+}
+
 module.exports = {
   createFamily,
   createFamilyForDevice,
@@ -313,5 +319,6 @@ module.exports = {
   createFamilyInvite,
   consumeFamilyInvite,
   assertDeviceCanAccessFamily,
-  grantDeviceAccessToFamily
+  grantDeviceAccessToFamily,
+  revokeDeviceAccessFromFamily
 };

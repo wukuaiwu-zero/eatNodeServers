@@ -6,6 +6,10 @@
 - 新增菜品随机池表：`family_recipe_pool_items`
 - `family_recipes` 新增 `cover_url`
 - `family_members` 新增 `member_name`、`title`、`avatar_url`
+- `family_shopping_items` 从 `item_json` 改为字段存储：`name`、`quantity`、`category_id`、`price`、`done`
+- `family_ingredient_items` 从 `item_json` 改为字段存储：`name`、`quantity`、`category_id`、`price`、`has_stock`、`expire_date`
+- 新增退出家庭接口：`POST /api/leaveFamily`
+- 新增购物清单/食材库修改、批量删除、清理接口
 - 删除旧 mock/demo 表：`weather_icons`、`users`
 
 ## 1. 登录服务器并进入项目
@@ -45,6 +49,8 @@ mysql -u root -p node_servers < database/production_update_2026_05_18.sql
 
 - 缺字段才加字段
 - 缺表才建表
+- 从旧 `item_json` 回填购物清单和食材库字段
+- 删除 `family_shopping_items.item_json` 和 `family_ingredient_items.item_json`
 - 删除 `weather_icons` 和 `users`
 
 ## 5. 确认表结构
@@ -53,6 +59,8 @@ mysql -u root -p node_servers < database/production_update_2026_05_18.sql
 mysql -u root -p node_servers -e "SHOW TABLES;"
 mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_recipes LIKE 'cover_url';"
 mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_members WHERE Field IN ('member_name','title','avatar_url');"
+mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_shopping_items WHERE Field IN ('name','quantity','category_id','price','done');"
+mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_ingredient_items WHERE Field IN ('name','quantity','category_id','price','has_stock','expire_date');"
 ```
 
 预期能看到：
@@ -69,6 +77,8 @@ family_recipe_pool_items
 ```text
 users
 weather_icons
+family_shopping_items.item_json
+family_ingredient_items.item_json
 ```
 
 ## 6. 确保上传目录可写
@@ -119,6 +129,11 @@ docs/apifox-postman-collection.json
 
 1. `POST /api/registerDevice`
 2. `POST /api/createFamily`
-3. `GET /api/getFamilyData`
-4. `GET /api/getFamilyRecipePoolItems`
-5. `GET /api/getFamilyMembers?familyCode={{familyCode}}`
+3. `POST /api/saveFamilyShoppingItem`
+4. `GET /api/getFamilyShoppingItems?categoryId=shopping_cat_vegetable`
+5. `POST /api/saveFamilyIngredientItem`
+6. `GET /api/getFamilyIngredientItems?categoryId=ingredient_cat_staple`
+7. 成员设备 `POST /api/joinFamily` 后测试 `POST /api/leaveFamily`
+8. `GET /api/getFamilyData`
+9. `GET /api/getFamilyRecipePoolItems`
+10. `GET /api/getFamilyMembers?familyCode={{familyCode}}`

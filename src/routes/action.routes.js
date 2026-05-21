@@ -41,6 +41,7 @@ router.post('/updateFamily', writeLimiter, familyController.updateFamily);
 router.post('/deleteFamily', familyLimiter, familyController.deleteFamily);
 router.get('/getFamilyMembers', familyController.listFamilyMembers);
 router.post('/updateMyFamilyMemberProfile', writeLimiter, familyController.updateMyFamilyMemberProfile);
+router.post('/leaveFamily', writeLimiter, familyController.leaveFamily);
 router.post('/createFamilyInvite', familyLimiter, familyController.createFamilyInvite);
 
 router.post('/saveFamilyRecipe', writeLimiter, familyRecipeController.uploadFamilyRecipe);

@@ -361,6 +361,43 @@ async function updateFamilyMemberProfileByDevice(deviceId, familyCode, profile) 
   return getFamilyMemberByDevice(deviceId, familyCode);
 }
 
+async function leaveFamilyByDevice(deviceId, familyCode) {
+  const member = await getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    return null;
+  }
+
+  if (member.role === 'owner') {
+    throw createConflictError('家庭创建者不能退出家庭，请解散家庭');
+  }
+
+  if (env.useMockDb) {
+    const row = mockFamilyMembers.get(member.memberCode);
+    row.joined_family = 0;
+    row.revoked_at = new Date().toISOString();
+    row.updated_at = row.revoked_at;
+    mockFamilyMembers.set(member.memberCode, row);
+    familyService.revokeDeviceAccessFromFamily(deviceId, familyCode);
+    return toFamilyMember(row);
+  }
+
+  await query(
+    `UPDATE family_members
+     SET joined_family = 0,
+         revoked_at = CURRENT_TIMESTAMP,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE family_code = ? AND device_id = ? AND revoked_at IS NULL`,
+    [familyCode, deviceId]
+  );
+
+  return {
+    ...member,
+    joinedFamily: false,
+    revokedAt: new Date()
+  };
+}
+
 async function upsertFamilyRecipe(familyCode, recipeJson, options = {}) {
   // family_recipes 是 family_code 唯一。
   // 同一个家庭再次上传菜谱时，整份 recipe_json 会覆盖旧值。
@@ -530,6 +567,7 @@ module.exports = {
   getFamilyMemberByDevice,
   listFamilyMembers,
   updateFamilyMemberProfileByDevice,
+  leaveFamilyByDevice,
   upsertFamilyRecipe,
   upsertFamilyRecipeByMember,
   upsertFamilyRecipeByDevice,

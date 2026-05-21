@@ -226,6 +226,29 @@ async function updateMyFamilyMemberProfile(req, res, next) {
   }
 }
 
+async function leaveFamily(req, res, next) {
+  try {
+    const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const familyCodeError = validateFamilyCode(familyCode);
+
+    if (familyCodeError) {
+      return res.status(400).json({ message: familyCodeError });
+    }
+
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+    const member = await familyRecipeService.leaveFamilyByDevice(device.deviceId, familyCode);
+
+    if (!member) {
+      return res.status(404).json({ message: '家庭成员不存在' });
+    }
+
+    return res.json({ data: member });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function createFamilyInvite(req, res, next) {
   try {
     const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
@@ -258,5 +281,6 @@ module.exports = {
   deleteFamily,
   listFamilyMembers,
   updateMyFamilyMemberProfile,
+  leaveFamily,
   createFamilyInvite
 };

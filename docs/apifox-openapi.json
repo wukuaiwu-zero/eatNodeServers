@@ -1062,6 +1062,57 @@
           }
         }
       }
+    },
+    "/api/leaveFamily": {
+      "post": {
+        "tags": [
+          "家庭与成员"
+        ],
+        "summary": "退出家庭",
+        "description": "当前设备退出家庭。owner 不能退出，只能调用 deleteFamily 解散家庭。",
+        "security": [
+          {
+            "deviceAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "familyCode"
+                ],
+                "properties": {
+                  "familyCode": {
+                    "type": "string",
+                    "example": "fam_xxx"
+                  }
+                }
+              },
+              "example": {
+                "familyCode": "fam_xxx"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "退出成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenericDataResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "owner 不能退出家庭"
+          }
+        }
+      }
     }
   },
   "components": {

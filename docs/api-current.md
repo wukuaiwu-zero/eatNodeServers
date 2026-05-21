@@ -52,6 +52,8 @@ X-Device-Secret: {{deviceSecret}}
 
 ### POST /api/deleteFamily
 
+解散家庭。
+
 ```json
 {
   "familyCode": "fam_xxx"
@@ -89,6 +91,16 @@ X-Device-Secret: {{deviceSecret}}
   "avatarUrl": "/uploads/avatars/a.png",
   "role": "owner",
   "isManager": true
+}
+```
+
+### POST /api/leaveFamily
+
+当前设备退出家庭。`owner` 不能退出，只能调用 `POST /api/deleteFamily` 解散家庭。
+
+```json
+{
+  "familyCode": "fam_xxx"
 }
 ```
 

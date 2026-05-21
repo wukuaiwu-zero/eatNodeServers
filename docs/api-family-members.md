@@ -76,3 +76,21 @@ POST /api/updateMyFamilyMemberProfile
   "avatarUrl": "/uploads/avatars/a.png"
 }
 ```
+
+## 退出家庭
+
+```text
+POST /api/leaveFamily
+```
+
+请求设备必须已加入该家庭。`owner` 不能退出家庭，只能调用 `POST /api/deleteFamily` 解散家庭。
+
+请求体：
+
+```json
+{
+  "familyCode": "fam_xxx"
+}
+```
+
+退出采用软撤销成员关系：`joined_family = 0`，`revoked_at` 写入当前时间。家庭数据不会删除。
