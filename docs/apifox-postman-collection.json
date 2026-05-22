@@ -1667,9 +1667,23 @@
               ],
               "query": []
             },
-            "description": ""
+            "description": "返回购物清单分类列表，categories 每一项包含 name 字段。"
           },
-          "response": []
+          "response": [
+            {
+              "name": "成功示例",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"member\": {\n      \"memberCode\": \"dev_xxx\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_xxx\"\n    },\n    \"categories\": [\n      {\n        \"id\": \"shopping_cat_vegetable\",\n        \"_id\": \"shopping_cat_vegetable\",\n        \"categoryId\": \"shopping_cat_vegetable\",\n        \"familyCode\": \"fam_xxx\",\n        \"name\": \"蔬菜\",\n        \"sortOrder\": 20,\n        \"isDefault\": true,\n        \"version\": 1,\n        \"deleted\": false,\n        \"deletedAt\": null\n      }\n    ]\n  }\n}"
+            }
+          ]
         },
         {
           "name": "删除购物分类",
@@ -1788,9 +1802,23 @@
               ],
               "query": []
             },
-            "description": ""
+            "description": "返回家庭库存分类列表，categories 每一项包含 name 字段。"
           },
-          "response": []
+          "response": [
+            {
+              "name": "成功示例",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"member\": {\n      \"memberCode\": \"dev_xxx\",\n      \"familyCode\": \"fam_xxx\",\n      \"deviceId\": \"dev_xxx\"\n    },\n    \"categories\": [\n      {\n        \"id\": \"ingredient_cat_meat\",\n        \"_id\": \"ingredient_cat_meat\",\n        \"categoryId\": \"ingredient_cat_meat\",\n        \"familyCode\": \"fam_xxx\",\n        \"name\": \"肉类\",\n        \"sortOrder\": 30,\n        \"isDefault\": true,\n        \"version\": 1,\n        \"deleted\": false,\n        \"deletedAt\": null\n      }\n    ]\n  }\n}"
+            }
+          ]
         },
         {
           "name": "删除食材分类",
