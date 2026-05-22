@@ -485,7 +485,7 @@
               ],
               "query": []
             },
-            "description": "当前设备退出家庭。owner 不能退出，只能解散家庭。",
+            "description": "当前设备退出家庭。relationType=home 的基础家庭不能退出。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\"\n}",

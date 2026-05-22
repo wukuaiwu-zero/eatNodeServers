@@ -1,12 +1,13 @@
 # family_members 家庭成员接口
 
-`family_members` 保存匿名设备和家庭的绑定关系：
+`family_members` 保存匿名设备和家庭的多家庭绑定关系：
 
 ```text
-deviceId -> familyCode
+deviceId -> familyCode[]
 ```
 
 `memberCode` 当前直接使用 `deviceId`，用于兼容已有 service 字段命名。
+`relationType = "home"` 表示设备首次使用时创建的基础家庭，基础家庭不能退出。
 
 ## 加入家庭
 
@@ -83,7 +84,7 @@ POST /api/updateMyFamilyMemberProfile
 POST /api/leaveFamily
 ```
 
-请求设备必须已加入该家庭。`owner` 不能退出家庭，只能调用 `POST /api/deleteFamily` 解散家庭。
+请求设备必须已加入该家庭。`relationType = "home"` 的基础家庭不能退出。
 
 请求体：
 

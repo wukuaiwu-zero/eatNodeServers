@@ -2,15 +2,11 @@
 
 这次更新包含：
 
-- 新增分类表：`family_shopping_categories`、`family_ingredient_categories`、`family_recipe_categories`
-- 新增菜品随机池表：`family_recipe_pool_items`
-- `family_recipes` 新增 `cover_url`
-- `family_members` 新增 `member_name`、`title`、`avatar_url`
-- `family_shopping_items` 从 `item_json` 改为字段存储：`name`、`quantity`、`category_id`、`price`、`done`
-- `family_ingredient_items` 从 `item_json` 改为字段存储：`name`、`quantity`、`category_id`、`price`、`has_stock`、`expire_date`
-- 新增退出家庭接口：`POST /api/leaveFamily`
-- 新增购物清单/食材库修改、批量删除、清理接口
-- 删除旧 mock/demo 表：`weather_icons`、`users`
+- `family_members` 新增 `relation_type`，支持基础家庭和多家庭关系。
+- `family_recipes` 从整份 `recipe_json` 改为一行一道菜谱。
+- 新增 `family_recipe_ingredients`，用于保存菜谱配料明细。
+- `steps` 继续以 JSON 数组形式存到 `family_recipes.steps_json`。
+- 新增单条菜谱接口：`saveFamilyRecipeItem`、`updateFamilyRecipeItem`、`getFamilyRecipeItem`。
 
 ## 1. 登录服务器并进入项目
 
@@ -27,6 +23,13 @@ git pull origin main
 npm install
 ```
 
+如果 `git pull` 提示旧迁移文件有本地改动，先暂存：
+
+```bash
+git stash push -m "server local old migration" -- database/production_update_2026_05_18.sql
+git pull origin main
+```
+
 ## 3. 备份数据库
 
 ```bash
@@ -39,47 +42,39 @@ mysqldump -u root -p node_servers > /www/backup/node_servers_$(date +%F_%H%M%S).
 mkdir -p /www/backup
 ```
 
-## 4. 执行本次数据库变更
+## 4. 执行数据库变更
+
+先跑结构变更：
 
 ```bash
-mysql -u root -p node_servers < database/production_update_2026_05_18.sql
+mysql -u root -p node_servers < database/production_update_2026_05_22.sql
 ```
 
-这个 SQL 会：
+再把旧 `family_recipes.recipe_json` 迁移到字段表：
 
-- 缺字段才加字段
-- 缺表才建表
-- 从旧 `item_json` 回填购物清单和食材库字段
-- 删除 `family_shopping_items.item_json` 和 `family_ingredient_items.item_json`
-- 删除 `weather_icons` 和 `users`
+```bash
+npm run migrate:recipes
+```
+
+`migrate:recipes` 用 Node 解析旧 JSON，兼容 MySQL 5.x。迁移后旧表会保留为：
+
+```text
+family_recipes_json_backup
+```
 
 ## 5. 确认表结构
 
 ```bash
-mysql -u root -p node_servers -e "SHOW TABLES;"
-mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_recipes LIKE 'cover_url';"
-mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_members WHERE Field IN ('member_name','title','avatar_url');"
-mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_shopping_items WHERE Field IN ('name','quantity','category_id','price','done');"
-mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_ingredient_items WHERE Field IN ('name','quantity','category_id','price','has_stock','expire_date');"
+mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_recipes;"
+mysql -u root -p node_servers -e "SHOW TABLES LIKE 'family_recipe_ingredients';"
+mysql -u root -p node_servers -e "SHOW COLUMNS FROM family_members LIKE 'relation_type';"
 ```
 
-预期能看到：
+预期：
 
-```text
-family_shopping_categories
-family_ingredient_categories
-family_recipe_categories
-family_recipe_pool_items
-```
-
-并且不再有：
-
-```text
-users
-weather_icons
-family_shopping_items.item_json
-family_ingredient_items.item_json
-```
+- `family_recipes` 有 `recipe_id/name/category/steps_json`。
+- 有 `family_recipe_ingredients` 表。
+- `family_members` 有 `relation_type` 字段。
 
 ## 6. 确保上传目录可写
 
@@ -113,27 +108,17 @@ pm2 restart <实际应用名>
 
 ## 8. 简单验证
 
-```bash
-curl -i http://127.0.0.1:3000/api/getFamilyData
-```
-
-未带设备凭证时返回认证错误是正常的，说明服务已经启动并命中接口。
-
-再用 Postman 导入：
+导入：
 
 ```text
 docs/apifox-postman-collection.json
 ```
 
-按这个顺序测：
+推荐顺序：
 
 1. `POST /api/registerDevice`
-2. `POST /api/createFamily`
-3. `POST /api/saveFamilyShoppingItem`
-4. `GET /api/getFamilyShoppingItems?categoryId=shopping_cat_vegetable`
-5. `POST /api/saveFamilyIngredientItem`
-6. `GET /api/getFamilyIngredientItems?categoryId=ingredient_cat_staple`
-7. 成员设备 `POST /api/joinFamily` 后测试 `POST /api/leaveFamily`
-8. `GET /api/getFamilyData`
-9. `GET /api/getFamilyRecipePoolItems`
-10. `GET /api/getFamilyMembers?familyCode={{familyCode}}`
+2. `GET /api/getMyFamilies`
+3. `POST /api/saveFamilyRecipeItem`
+4. `GET /api/getFamilyRecipeItem?familyCode={{familyCode}}&id=recipe_qjrs`
+5. `GET /api/getFamilyRecipe?familyCode={{familyCode}}`
+6. `GET /api/getFamilyData`
