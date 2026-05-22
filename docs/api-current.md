@@ -121,24 +121,77 @@ X-Device-Secret: {{deviceSecret}}
 
 ### POST /api/saveFamilyRecipe
 
-保存家庭菜谱，支持 `coverUrl`。
+批量保存家庭菜谱。后端会逐条写入 `family_recipes` 和 `family_recipe_ingredients`，不再保存整份 `recipeJson`。
 
 ```json
 {
   "familyCode": "fam_xxx",
-  "coverUrl": "/uploads/recipe-covers/fam_xxx/demo.jpg",
   "recipeJson": {
     "recipes": [
       {
-        "id": "recipe_tomato_egg",
-        "name": "番茄炒蛋",
-        "coverUrl": "/uploads/recipe-covers/fam_xxx/demo.jpg"
+        "id": "recipe_qjrs",
+        "category": "家常菜",
+        "cover": "",
+        "difficulty": "中等",
+        "duration": "20分钟",
+        "favorite": false,
+        "ingredients": [
+          {
+            "amount": "200g",
+            "isSeasoning": false,
+            "name": "猪里脊"
+          }
+        ],
+        "name": "青椒肉丝",
+        "own": true,
+        "steps": ["里脊肉切丝", "青椒去籽切丝"]
       }
-    ],
-    "coverUrl": "/uploads/recipe-covers/fam_xxx/demo.jpg"
+    ]
   }
 }
 ```
+
+### POST /api/saveFamilyRecipeItem
+
+新增单条菜谱。服务端会写入字段表；`steps` 存为 JSON，`ingredients` 存到配料表。
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "recipeItemJson": {
+    "id": "recipe_tomato_egg",
+    "name": "番茄炒蛋",
+    "ingredients": [
+      {
+        "amount": "2个",
+        "isSeasoning": false,
+        "name": "鸡蛋"
+      }
+    ],
+    "steps": ["鸡蛋炒熟", "番茄炒出汁后合炒"]
+  }
+}
+```
+
+`id` 可不传，服务端会生成；`name` 必填。
+
+### POST /api/updateFamilyRecipeItem
+
+修改单条菜谱。按 `recipeItemJson.id` 找到原菜谱后合并更新；没有匹配到时新增一条。修改已有菜谱时可以只传要改的字段。
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "recipeItemJson": {
+    "id": "recipe_tomato_egg",
+    "name": "番茄炒鸡蛋"
+  }
+}
+```
+
+### GET /api/getFamilyRecipeItem?familyCode=fam_xxx&id=recipe_tomato_egg
+
+查询单条菜谱详情。`id` 也兼容 `_id` 或 `recipeId`。
 
 ### POST /api/uploadFamilyRecipeCover
 
@@ -412,9 +465,9 @@ POST /api/deleteFamilyRecipeCategory
 {
   "data": {
     "familyRecipe": {
-      "recipes": [],
-      "coverUrl": "/uploads/recipe-covers/fam_xxx/demo.jpg"
+      "recipes": []
     },
+    "familyRecipes": [],
     "shoppingList": [],
     "ingredientLibrary": [],
     "shoppingCategories": [],

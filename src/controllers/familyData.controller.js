@@ -35,13 +35,15 @@ async function getFamilyJsonData(req, res, next) {
     const recipePoolItems = await familyRecipePoolService.listDishesByFamily(member.familyCode);
 
     // 返回字段明确拆成三块：
-    // - familyRecipe：当前仍是整份 JSON。
+    // - familyRecipe：兼容旧字段，值为 { recipes: [...] }。
+    // - familyRecipes：字段化后的菜谱数组。
     // - shoppingList：购物清单 item 数组。
     // - ingredientLibrary：食材库 item 数组。
     // 三者不要混在一起，给后续不同业务逻辑留空间。
     return res.json({
       data: {
         familyRecipe: recipe ? recipe.recipeJson : null,
+        familyRecipes: recipe ? recipe.recipes : [],
         shoppingList,
         ingredientLibrary,
         shoppingCategories,

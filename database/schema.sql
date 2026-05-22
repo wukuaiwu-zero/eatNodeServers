@@ -5,12 +5,41 @@ USE node_servers;
 CREATE TABLE IF NOT EXISTS family_recipes (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   family_code VARCHAR(100) NOT NULL,
-  recipe_json LONGTEXT NOT NULL,
+  recipe_id VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  category VARCHAR(100) DEFAULT NULL,
   cover_url VARCHAR(255) DEFAULT NULL,
+  difficulty VARCHAR(50) DEFAULT NULL,
+  duration VARCHAR(50) DEFAULT NULL,
+  favorite TINYINT(1) NOT NULL DEFAULT 0,
+  own TINYINT(1) NOT NULL DEFAULT 1,
+  steps_json LONGTEXT DEFAULT NULL,
+  created_by VARCHAR(100) DEFAULT NULL,
+  updated_by VARCHAR(100) DEFAULT NULL,
+  version INT UNSIGNED NOT NULL DEFAULT 1,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uk_family_recipes_family_code (family_code)
+  UNIQUE KEY uk_family_recipes_family_recipe (family_code, recipe_id),
+  KEY idx_family_recipes_family_category (family_code, category),
+  KEY idx_family_recipes_family_favorite (family_code, favorite),
+  KEY idx_family_recipes_family_deleted (family_code, deleted_at)
+);
+
+CREATE TABLE IF NOT EXISTS family_recipe_ingredients (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  family_code VARCHAR(100) NOT NULL,
+  recipe_id VARCHAR(100) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  amount VARCHAR(100) DEFAULT NULL,
+  is_seasoning TINYINT(1) NOT NULL DEFAULT 0,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_family_recipe_ingredients_recipe_sort (family_code, recipe_id, sort_order),
+  KEY idx_family_recipe_ingredients_recipe (family_code, recipe_id)
 );
 
 CREATE TABLE IF NOT EXISTS families (
@@ -58,13 +87,15 @@ CREATE TABLE IF NOT EXISTS family_members (
   title VARCHAR(100) DEFAULT NULL,
   avatar_url VARCHAR(255) DEFAULT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'member',
+  relation_type VARCHAR(20) NOT NULL DEFAULT 'joined',
   joined_family TINYINT(1) NOT NULL DEFAULT 0,
   revoked_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE KEY uk_family_members_member_code (member_code),
+  UNIQUE KEY uk_family_members_family_member (family_code, member_code),
   UNIQUE KEY uk_family_members_family_device (family_code, device_id),
+  KEY idx_family_members_device (device_id),
   KEY idx_family_members_family_code (family_code)
 );
 

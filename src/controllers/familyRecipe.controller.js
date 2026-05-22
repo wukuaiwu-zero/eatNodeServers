@@ -7,6 +7,7 @@ const deviceService = require('../services/device.service');
 const { getDeviceCredentials } = require('../utils/request');
 
 const FAMILY_CODE_MAX_LENGTH = 100;
+const RECIPE_ID_MAX_LENGTH = 100;
 const MAX_COVER_IMAGE_BYTES = 4 * 1024 * 1024;
 const COVER_UPLOAD_DIR = path.join(__dirname, '../../public/uploads/recipe-covers');
 const IMAGE_TYPES = {
@@ -31,6 +32,18 @@ function validateFamilyCode(familyCode) {
 
   if (familyCode.length > FAMILY_CODE_MAX_LENGTH) {
     return `家庭码太长了，不能超过 ${FAMILY_CODE_MAX_LENGTH} 个字符`;
+  }
+
+  return null;
+}
+
+function validateRecipeId(recipeId) {
+  if (!recipeId) {
+    return '请填写菜谱 ID';
+  }
+
+  if (recipeId.length > RECIPE_ID_MAX_LENGTH) {
+    return `菜谱 ID 太长了，不能超过 ${RECIPE_ID_MAX_LENGTH} 个字符`;
   }
 
   return null;
@@ -148,6 +161,76 @@ async function uploadFamilyRecipeCover(req, res, next) {
   }
 }
 
+async function upsertFamilyRecipeItem(req, res, next) {
+  try {
+    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const recipeItem = req.body.recipeItemJson || req.body.recipeJson || req.body.recipe;
+    const familyCodeError = validateFamilyCode(familyCode);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+    if (familyCodeError) {
+      return res.status(400).json({ message: familyCodeError });
+    }
+
+    if (recipeItem === undefined || recipeItem === null) {
+      return res.status(400).json({ message: '请填写菜谱数据' });
+    }
+
+    const data = await familyRecipeService.upsertFamilyRecipeItemByDevice(
+      device.deviceId,
+      familyCode,
+      recipeItem,
+      {
+        coverUrl: getInput(req, 'coverUrl') || getInput(req, 'cover_url')
+      }
+    );
+
+    return res.json({ data });
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return res.status(400).json({ message: '菜谱数据格式不正确' });
+    }
+
+    if (error instanceof TypeError) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return next(error);
+  }
+}
+
+async function getFamilyRecipeItem(req, res, next) {
+  try {
+    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const recipeId = normalizeFamilyCode(
+      getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'recipeId')
+    );
+    const familyCodeError = validateFamilyCode(familyCode);
+    const recipeIdError = validateRecipeId(recipeId);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+    if (familyCodeError || recipeIdError) {
+      return res.status(400).json({ message: familyCodeError || recipeIdError });
+    }
+
+    const data = await familyRecipeService.getFamilyRecipeItemByDevice(
+      device.deviceId,
+      familyCode,
+      recipeId
+    );
+
+    if (!data) {
+      return res.status(404).json({ message: '菜谱不存在' });
+    }
+
+    return res.json({ data });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function joinFamily(req, res, next) {
   try {
     const inviteCode = normalizeFamilyCode(getInput(req, 'inviteCode') || getInput(req, 'invitecode'));
@@ -159,7 +242,14 @@ async function joinFamily(req, res, next) {
     }
 
     const member = await familyRecipeService.joinFamilyByInvite(device.deviceId, inviteCode);
-    return res.json({ data: member });
+    const familySummary = await familyRecipeService.getFamilySummaryByDevice(device.deviceId);
+    return res.json({
+      data: {
+        member,
+        familyCodeList: familySummary.familyCodeList,
+        families: familySummary.families
+      }
+    });
   } catch (error) {
     return next(error);
   }
@@ -214,6 +304,8 @@ async function getFamilyRecipe(req, res, next) {
 module.exports = {
   uploadFamilyRecipe,
   uploadFamilyRecipeCover,
+  upsertFamilyRecipeItem,
+  getFamilyRecipeItem,
   joinFamily,
   getFamilyRecipeByMember,
   getFamilyRecipe

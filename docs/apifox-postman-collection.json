@@ -535,16 +535,146 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "批量保存家庭菜谱。后端逐条写入 family_recipes 和 family_recipe_ingredients，不再保存整份 recipeJson。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"coverUrl\": \"/uploads/recipe-covers/{{familyCode}}/demo.jpg\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_tomato_egg\",\n        \"name\": \"番茄炒蛋\",\n        \"coverUrl\": \"/uploads/recipe-covers/{{familyCode}}/demo.jpg\"\n      }\n    ],\n    \"coverUrl\": \"/uploads/recipe-covers/{{familyCode}}/demo.jpg\"\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_qjrs\",\n        \"category\": \"家常菜\",\n        \"cover\": \"\",\n        \"difficulty\": \"中等\",\n        \"duration\": \"20分钟\",\n        \"favorite\": false,\n        \"ingredients\": [\n          {\n            \"amount\": \"200g\",\n            \"isSeasoning\": false,\n            \"name\": \"猪里脊\"\n          },\n          {\n            \"amount\": \"3个\",\n            \"isSeasoning\": false,\n            \"name\": \"青椒\"\n          }\n        ],\n        \"name\": \"青椒肉丝\",\n        \"own\": true,\n        \"steps\": [\n          \"里脊肉切丝，用生抽、料酒、淀粉腌制15分钟\",\n          \"青椒去籽切丝，大蒜切末\"\n        ]\n      }\n    ]\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
             }
+          },
+          "response": []
+        },
+        {
+          "name": "保存单条家庭菜谱",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyRecipeItem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "saveFamilyRecipeItem"
+              ],
+              "query": []
+            },
+            "description": "新增单条菜谱。写入字段表；steps 存为 JSON，ingredients 存到配料表。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"recipeItemJson\": {\n    \"id\": \"recipe_qjrs\",\n    \"category\": \"家常菜\",\n    \"cover\": \"\",\n    \"difficulty\": \"中等\",\n    \"duration\": \"20分钟\",\n    \"favorite\": false,\n    \"ingredients\": [\n      {\n        \"amount\": \"200g\",\n        \"isSeasoning\": false,\n        \"name\": \"猪里脊\"\n      },\n      {\n        \"amount\": \"3个\",\n        \"isSeasoning\": false,\n        \"name\": \"青椒\"\n      }\n    ],\n    \"name\": \"青椒肉丝\",\n    \"own\": true,\n    \"steps\": [\n      \"里脊肉切丝，用生抽、料酒、淀粉腌制15分钟\",\n      \"青椒去籽切丝，大蒜切末\"\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "修改单条家庭菜谱",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/updateFamilyRecipeItem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "updateFamilyRecipeItem"
+              ],
+              "query": []
+            },
+            "description": "按 id 修改单条菜谱；已有菜谱支持只传要改的字段。没有匹配到 id 时新增。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"recipeItemJson\": {\n    \"id\": \"recipe_qjrs\",\n    \"favorite\": true,\n    \"difficulty\": \"简单\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询单条家庭菜谱",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyRecipeItem?familyCode={{familyCode}}&id=recipe_qjrs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyRecipeItem"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "id",
+                  "value": "recipe_qjrs"
+                }
+              ]
+            },
+            "description": "查询单条菜谱详情。返回字段化菜谱、配料数组和 steps 数组。"
           },
           "response": []
         },
@@ -1941,7 +2071,7 @@
               ],
               "query": []
             },
-            "description": "返回 familyRecipe/shoppingList/ingredientLibrary/shoppingCategories/ingredientCategories/recipeCategories/recipePoolItems。"
+            "description": "返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems。"
           },
           "response": []
         }

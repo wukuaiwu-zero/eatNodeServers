@@ -75,14 +75,29 @@ async function createFamily(req, res, next) {
     });
     const member = await familyRecipeService.bindDeviceToFamily(device.deviceId, data.family.familyCode, 'owner');
     const invite = await familyService.createFamilyInvite(data.family.familyCode);
+    const familySummary = await familyRecipeService.getFamilySummaryByDevice(device.deviceId);
 
     return res.status(201).json({
       data: {
         ...data,
         member,
-        invite
+        invite,
+        familyCodeList: familySummary.familyCodeList,
+        families: familySummary.families
       }
     });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getMyFamilies(req, res, next) {
+  try {
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+    const data = await familyRecipeService.getFamilySummaryByDevice(device.deviceId);
+
+    return res.json({ data });
   } catch (error) {
     return next(error);
   }
@@ -296,6 +311,7 @@ async function createFamilyInvite(req, res, next) {
 
 module.exports = {
   createFamily,
+  getMyFamilies,
   getFamily,
   updateFamily,
   deleteFamily,

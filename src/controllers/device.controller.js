@@ -1,4 +1,5 @@
 const deviceService = require('../services/device.service');
+const familyRecipeService = require('../services/familyRecipe.service');
 const { normalizeText } = require('../utils/request');
 
 const DEVICE_ID_MAX_LENGTH = 100;
@@ -35,8 +36,16 @@ async function registerDevice(req, res, next) {
       deviceId: deviceId || undefined,
       deviceSecret: deviceSecret || undefined
     });
+    const familySummary = await familyRecipeService.getFamilySummaryByDevice(data.device.deviceId);
 
-    return res.status(201).json({ data });
+    return res.status(201).json({
+      data: {
+        ...data,
+        familyCodeList: familySummary.familyCodeList,
+        homeFamilyCode: familySummary.homeFamilyCode,
+        families: familySummary.families
+      }
+    });
   } catch (error) {
     return next(error);
   }

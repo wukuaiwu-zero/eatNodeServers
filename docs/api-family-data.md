@@ -3,6 +3,7 @@
 聚合接口用于客户端启动时一次拉取当前设备所属家庭的三类数据：
 
 - `familyRecipe`
+- `familyRecipes`
 - `shoppingList`
 - `ingredientLibrary`
 - `shoppingCategories`
@@ -29,9 +30,9 @@ GET /api/getFamilyData
 {
   "data": {
     "familyRecipe": {
-      "recipes": [],
-      "coverUrl": "/uploads/recipe-covers/fam_xxx/xxx.jpg"
+      "recipes": []
     },
+    "familyRecipes": [],
     "shoppingList": [],
     "ingredientLibrary": [],
     "shoppingCategories": [],
