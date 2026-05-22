@@ -110,7 +110,7 @@ function normalizeItem(itemJson, familyCode, itemType) {
   };
 }
 
-function toItem(row, itemType) {
+function toItem(row, itemType, categoryName = null) {
   if (!row) {
     return null;
   }
@@ -126,6 +126,8 @@ function toItem(row, itemType) {
     num: row.quantity,
     categoryId: row.category_id,
     category_id: row.category_id,
+    categoryName: categoryName || row.category_name || null,
+    category_name: categoryName || row.category_name || null,
     price: row.price,
     create_time: row.create_time,
     createTime: row.create_time,
@@ -159,12 +161,35 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     return `${familyCode}:${itemId}`;
   }
 
-  function getSelectColumns() {
-    const typeColumns = itemType === 'shopping'
-      ? 'done'
-      : 'has_stock, expire_date';
+  async function getCategoryNameMapForMock(familyCode) {
+    const map = new Map();
+    try {
+      const categoryService = itemType === 'shopping'
+        ? require('./familyShoppingCategory.service')
+        : require('./familyIngredientCategory.service');
+      const categories = await categoryService.listCategoriesByFamily(familyCode);
+      for (const cat of categories) {
+        map.set(cat.categoryId, cat.name);
+      }
+    } catch (e) {
+      // Ignore or log error
+    }
+    return map;
+  }
 
-    return `id, item_id, family_code, name, quantity, category_id, price, ${typeColumns}, create_time, version, deleted_at, created_at, updated_at`;
+  async function getCategoryNameForMock(familyCode, categoryId) {
+    if (!categoryId) return null;
+    const map = await getCategoryNameMapForMock(familyCode);
+    return map.get(categoryId) || null;
+  }
+
+  function getSelectColumns(tableAlias = '') {
+    const prefix = tableAlias ? `${tableAlias}.` : '';
+    const typeColumns = itemType === 'shopping'
+      ? `${prefix}done`
+      : `${prefix}has_stock, ${prefix}expire_date`;
+
+    return `${prefix}id, ${prefix}item_id, ${prefix}family_code, ${prefix}name, ${prefix}quantity, ${prefix}category_id, ${prefix}price, ${typeColumns}, ${prefix}create_time, ${prefix}version, ${prefix}deleted_at, ${prefix}created_at, ${prefix}updated_at`;
   }
 
   function createMockRow(familyCode, memberCode, normalized) {
@@ -199,7 +224,9 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     const normalized = normalizeItem(itemJson, familyCode, itemType);
 
     if (env.useMockDb) {
-      return toItem(createMockRow(familyCode, memberCode, normalized), itemType);
+      const row = createMockRow(familyCode, memberCode, normalized);
+      const categoryName = await getCategoryNameForMock(familyCode, row.category_id);
+      return toItem(row, itemType, categoryName);
     }
 
     if (itemType === 'shopping') {
@@ -288,13 +315,18 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
 
   async function getItemByFamily(familyCode, itemId) {
     if (env.useMockDb) {
-      return toItem(mockItems.get(getMockKey(familyCode, itemId)), itemType);
+      const row = mockItems.get(getMockKey(familyCode, itemId));
+      if (!row) return null;
+      const categoryName = await getCategoryNameForMock(familyCode, row.category_id);
+      return toItem(row, itemType, categoryName);
     }
 
+    const categoryTable = itemType === 'shopping' ? 'family_shopping_categories' : 'family_ingredient_categories';
     const rows = await query(
-      `SELECT ${getSelectColumns()}
-       FROM ${tableName}
-       WHERE family_code = ? AND item_id = ?`,
+      `SELECT ${getSelectColumns('i')}, c.name AS category_name
+       FROM ${tableName} i
+       LEFT JOIN ${categoryTable} c ON i.family_code = c.family_code AND i.category_id = c.category_id AND c.deleted_at IS NULL
+       WHERE i.family_code = ? AND i.item_id = ?`,
       [familyCode, itemId]
     );
 
@@ -330,31 +362,34 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     const categoryId = normalizeText(options.categoryId || options.category_id);
 
     if (env.useMockDb) {
+      const categoryNameMap = await getCategoryNameMapForMock(familyCode);
       return Array.from(mockItems.values())
         .filter((row) => row.family_code === familyCode)
         .filter((row) => includeDeleted || !row.deleted_at)
         .filter((row) => !categoryId || row.category_id === categoryId)
         .sort((a, b) => (a.create_time || 0) - (b.create_time || 0))
-        .map((row) => toItem(row, itemType));
+        .map((row) => toItem(row, itemType, categoryNameMap.get(row.category_id)));
     }
 
-    const filters = ['family_code = ?'];
+    const filters = ['i.family_code = ?'];
     const params = [familyCode];
 
     if (!includeDeleted) {
-      filters.push('deleted_at IS NULL');
+      filters.push('i.deleted_at IS NULL');
     }
 
     if (categoryId) {
-      filters.push('category_id = ?');
+      filters.push('i.category_id = ?');
       params.push(categoryId);
     }
 
+    const categoryTable = itemType === 'shopping' ? 'family_shopping_categories' : 'family_ingredient_categories';
     const rows = await query(
-      `SELECT ${getSelectColumns()}
-       FROM ${tableName}
+      `SELECT ${getSelectColumns('i')}, c.name AS category_name
+       FROM ${tableName} i
+       LEFT JOIN ${categoryTable} c ON i.family_code = c.family_code AND i.category_id = c.category_id AND c.deleted_at IS NULL
        WHERE ${filters.join(' AND ')}
-       ORDER BY create_time ASC, id ASC`,
+       ORDER BY i.create_time ASC, i.id ASC`,
       params
     );
 
@@ -389,20 +424,23 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     const sinceMs = Number(since || 0);
 
     if (env.useMockDb) {
+      const categoryNameMap = await getCategoryNameMapForMock(familyCode);
       const items = Array.from(mockItems.values())
         .filter((row) => row.family_code === familyCode)
         .filter((row) => Date.parse(row.updated_at) > sinceMs)
         .sort((a, b) => Date.parse(a.updated_at) - Date.parse(b.updated_at))
-        .map((row) => toItem(row, itemType));
+        .map((row) => toItem(row, itemType, categoryNameMap.get(row.category_id)));
 
       return { familyCode, items, serverTime: Date.now() };
     }
 
+    const categoryTable = itemType === 'shopping' ? 'family_shopping_categories' : 'family_ingredient_categories';
     const rows = await query(
-      `SELECT ${getSelectColumns()}
-       FROM ${tableName}
-       WHERE family_code = ? AND updated_at > FROM_UNIXTIME(?)
-       ORDER BY updated_at ASC, id ASC`,
+      `SELECT ${getSelectColumns('i')}, c.name AS category_name
+       FROM ${tableName} i
+       LEFT JOIN ${categoryTable} c ON i.family_code = c.family_code AND i.category_id = c.category_id AND c.deleted_at IS NULL
+       WHERE i.family_code = ? AND i.updated_at > FROM_UNIXTIME(?)
+       ORDER BY i.updated_at ASC, i.id ASC`,
       [familyCode, Math.max(0, sinceMs) / 1000]
     );
 
@@ -448,7 +486,8 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
       current.updated_at = current.deleted_at;
       mockItems.set(key, current);
 
-      return toItem(current, itemType);
+      const categoryName = await getCategoryNameForMock(familyCode, current.category_id);
+      return toItem(current, itemType, categoryName);
     }
 
     await query(
