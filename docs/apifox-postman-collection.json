@@ -679,6 +679,51 @@
           "response": []
         },
         {
+          "name": "删除单条家庭菜谱",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyRecipeItem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyRecipeItem"
+              ],
+              "query": []
+            },
+            "description": "软删除单条菜谱。写入 family_recipes.deleted_at，列表和详情默认不返回已删除菜谱。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"recipe_qjrs\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
           "name": "上传家庭菜谱封面",
           "request": {
             "method": "POST",

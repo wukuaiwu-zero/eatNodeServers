@@ -973,6 +973,57 @@ async function upsertFamilyRecipeItemByDevice(deviceId, familyCode, recipeItem, 
   };
 }
 
+async function deleteFamilyRecipeItemByDevice(deviceId, familyCode, recipeId) {
+  const member = await getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    throw createNotFoundError('当前设备还没有加入这个家庭');
+  }
+
+  const current = await getRecipeItemByFamily(member.familyCode, recipeId);
+
+  if (!current) {
+    return null;
+  }
+
+  if (env.useMockDb) {
+    const key = getRecipeKey(member.familyCode, recipeId);
+    const row = mockFamilyRecipes.get(key);
+    row.deleted_at = new Date().toISOString();
+    row.updated_by = member.memberCode;
+    row.version = (row.version || 0) + 1;
+    row.updated_at = row.deleted_at;
+    mockFamilyRecipes.set(key, row);
+
+    return {
+      member,
+      recipe: toRecipeItem(
+        row,
+        mockFamilyRecipeIngredients.get(key) || []
+      )
+    };
+  }
+
+  await query(
+    `UPDATE family_recipes
+     SET deleted_at = CURRENT_TIMESTAMP,
+         updated_by = ?,
+         version = version + 1,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE family_code = ? AND recipe_id = ? AND deleted_at IS NULL`,
+    [member.memberCode, member.familyCode, recipeId]
+  );
+
+  return {
+    member,
+    recipe: {
+      ...current,
+      deleted: true,
+      deletedAt: new Date()
+    }
+  };
+}
+
 async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl) {
   const member = await getFamilyMemberByDevice(deviceId, familyCode);
 
@@ -1104,6 +1155,7 @@ module.exports = {
   upsertFamilyRecipeByDevice,
   getFamilyRecipeItemByDevice,
   upsertFamilyRecipeItemByDevice,
+  deleteFamilyRecipeItemByDevice,
   updateFamilyRecipeCoverByDevice,
   getFamilyRecipeByCode,
   getFamilyRecipeByMember,

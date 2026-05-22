@@ -231,6 +231,37 @@ async function getFamilyRecipeItem(req, res, next) {
   }
 }
 
+async function deleteFamilyRecipeItem(req, res, next) {
+  try {
+    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const recipeId = normalizeFamilyCode(
+      getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'recipeId')
+    );
+    const familyCodeError = validateFamilyCode(familyCode);
+    const recipeIdError = validateRecipeId(recipeId);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+    if (familyCodeError || recipeIdError) {
+      return res.status(400).json({ message: familyCodeError || recipeIdError });
+    }
+
+    const data = await familyRecipeService.deleteFamilyRecipeItemByDevice(
+      device.deviceId,
+      familyCode,
+      recipeId
+    );
+
+    if (!data) {
+      return res.status(404).json({ message: '菜谱不存在' });
+    }
+
+    return res.json({ data });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 async function joinFamily(req, res, next) {
   try {
     const inviteCode = normalizeFamilyCode(getInput(req, 'inviteCode') || getInput(req, 'invitecode'));
@@ -306,6 +337,7 @@ module.exports = {
   uploadFamilyRecipeCover,
   upsertFamilyRecipeItem,
   getFamilyRecipeItem,
+  deleteFamilyRecipeItem,
   joinFamily,
   getFamilyRecipeByMember,
   getFamilyRecipe

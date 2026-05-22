@@ -146,6 +146,23 @@ GET /api/getFamilyRecipeItem?familyCode=fam_xxx&id=recipe_qjrs
 }
 ```
 
+## 删除单条菜谱
+
+```text
+POST /api/deleteFamilyRecipeItem
+```
+
+请求：
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "id": "recipe_qjrs"
+}
+```
+
+删除采用软删除：写入 `family_recipes.deleted_at`，配料明细会保留。列表和详情接口默认只返回未删除菜谱。
+
 ## 上传家庭菜谱封面
 
 ```text

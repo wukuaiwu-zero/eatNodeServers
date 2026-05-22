@@ -193,6 +193,17 @@ X-Device-Secret: {{deviceSecret}}
 
 查询单条菜谱详情。`id` 也兼容 `_id` 或 `recipeId`。
 
+### POST /api/deleteFamilyRecipeItem
+
+软删除单条菜谱。
+
+```json
+{
+  "familyCode": "fam_xxx",
+  "id": "recipe_tomato_egg"
+}
+```
+
 ### POST /api/uploadFamilyRecipeCover
 
 上传家庭菜谱封面。支持 `jpeg/png/webp/gif`，最大 4MB。
