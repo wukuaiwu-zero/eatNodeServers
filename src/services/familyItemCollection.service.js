@@ -176,8 +176,8 @@ function toItem(row, itemType, categoryName = null) {
     has: Boolean(row.has_stock),
     hasStock: Boolean(row.has_stock),
     has_stock: Boolean(row.has_stock),
-    expire_date: row.expire_date,
-    expireDate: row.expire_date
+    expire_date: normalizeTimeValue(row.expire_date),
+    expireDate: normalizeTimeValue(row.expire_date)
   };
 }
 
