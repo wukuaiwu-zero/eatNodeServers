@@ -92,6 +92,29 @@ function saveCoverImage(familyCode, image) {
   return `/uploads/recipe-covers/${familyCode}/${filename}`;
 }
 
+function toRecipeListResponse(recipe) {
+  if (!recipe) {
+    return recipe;
+  }
+
+  return {
+    familyCode: recipe.familyCode,
+    recipeList: recipe.recipes || []
+  };
+}
+
+function withRecipeListResponse(data) {
+  if (!data) {
+    return data;
+  }
+
+  const { recipe, ...rest } = data;
+  return {
+    ...rest,
+    ...toRecipeListResponse(recipe)
+  };
+}
+
 async function uploadFamilyRecipe(req, res, next) {
   try {
     const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
@@ -115,7 +138,7 @@ async function uploadFamilyRecipe(req, res, next) {
         coverUrl: getInput(req, 'coverUrl') || getInput(req, 'cover_url')
       }
     );
-    return res.json({ data });
+    return res.json({ data: withRecipeListResponse(data) });
   } catch (error) {
     if (error instanceof SyntaxError) {
       return res.status(400).json({ message: '菜谱数据格式不正确' });
@@ -187,7 +210,7 @@ async function handleFamilyRecipeItemUpsert(req, res, next, mode) {
       }
     );
 
-    return res.json({ data });
+    return res.json({ data: withRecipeListResponse(data) });
   } catch (error) {
     if (error instanceof SyntaxError) {
       return res.status(400).json({ message: '菜谱数据格式不正确' });
@@ -310,7 +333,7 @@ async function getFamilyRecipeByMember(req, res, next) {
       return res.status(404).json({ message: '家庭菜谱不存在' });
     }
 
-    return res.json({ data });
+    return res.json({ data: withRecipeListResponse(data) });
   } catch (error) {
     return next(error);
   }
@@ -335,7 +358,7 @@ async function getFamilyRecipe(req, res, next) {
       return res.status(404).json({ message: '家庭菜谱不存在' });
     }
 
-    return res.json({ data: recipe });
+    return res.json({ data: toRecipeListResponse(recipe) });
   } catch (error) {
     return next(error);
   }

@@ -58,25 +58,39 @@ function normalizeDate(value) {
 }
 
 function normalizeTimeValue(value) {
+  function formatBeijingTime(date) {
+    const beijingTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+    return `${beijingTime.toISOString().slice(0, -1)}+08:00`;
+  }
+
+  function formatBeijingDate(text) {
+    return `${text}T00:00:00.000+08:00`;
+  }
+
   if (value instanceof Date) {
-    return value.toISOString();
+    return formatBeijingTime(value);
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return new Date(value).toISOString();
+    return formatBeijingTime(new Date(value));
   }
 
   if (typeof value === 'string') {
     const text = value.trim();
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      return formatBeijingDate(text);
+    }
+
     const numeric = Number(text);
 
     if (Number.isFinite(numeric) && text) {
-      return new Date(numeric).toISOString();
+      return formatBeijingTime(new Date(numeric));
     }
 
     const parsed = Date.parse(text);
     if (!Number.isNaN(parsed)) {
-      return new Date(parsed).toISOString();
+      return formatBeijingTime(new Date(parsed));
     }
   }
 

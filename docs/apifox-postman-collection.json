@@ -535,7 +535,7 @@
               ],
               "query": []
             },
-            "description": "批量导入/批量 upsert 家庭菜谱。传数组或 { recipes: [...] } 时会逐条保存：有 id/_id/recipeId 则更新对应菜谱，没有 id 则新增。前端编辑单条菜谱不要用这个接口，避免把整组列表一起提交导致其它菜谱被覆盖；单条新增用 saveFamilyRecipeItem，单条更新用 updateFamilyRecipeItem。",
+            "description": "批量导入/批量 upsert 家庭菜谱。传数组或 { recipes: [...] } 时会逐条保存：有 id/_id/recipeId 则更新对应菜谱，没有 id 则新增。返回字段为 familyCode + recipeList。前端编辑单条菜谱不要用这个接口，避免把整组列表一起提交导致其它菜谱被覆盖；单条新增用 saveFamilyRecipeItem，单条更新用 updateFamilyRecipeItem。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"recipeJson\": {\n    \"recipes\": [\n      {\n        \"id\": \"recipe_qjrs\",\n        \"category\": \"家常菜\",\n        \"cover\": \"\",\n        \"difficulty\": \"中等\",\n        \"duration\": \"20分钟\",\n        \"favorite\": false,\n        \"ingredients\": [\n          {\n            \"amount\": \"200g\",\n            \"isSeasoning\": false,\n            \"name\": \"猪里脊\"\n          },\n          {\n            \"amount\": \"3个\",\n            \"isSeasoning\": false,\n            \"name\": \"青椒\"\n          }\n        ],\n        \"name\": \"青椒肉丝\",\n        \"own\": true,\n        \"steps\": [\n          \"里脊肉切丝，用生抽、料酒、淀粉腌制15分钟\",\n          \"青椒去籽切丝，大蒜切末\"\n        ]\n      }\n    ]\n  }\n}",
@@ -580,7 +580,7 @@
               ],
               "query": []
             },
-            "description": "新增单条菜谱。recipeItemJson 必须是单个对象，不能传数组；可以不传 id，由后端生成。若传入已存在的 id，会返回 409。",
+            "description": "新增单条菜谱。recipeItemJson 必须是单个对象，不能传数组；可以不传 id，由后端生成。若传入已存在的 id，会返回 409。返回包含 recipeItem 和最新 recipeList。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"recipeItemJson\": {\n    \"category\": \"家常菜\",\n    \"cover\": \"\",\n    \"difficulty\": \"中等\",\n    \"duration\": \"20分钟\",\n    \"favorite\": false,\n    \"ingredients\": [\n      {\n        \"amount\": \"200g\",\n        \"isSeasoning\": false,\n        \"name\": \"猪里脊\"\n      },\n      {\n        \"amount\": \"3个\",\n        \"isSeasoning\": false,\n        \"name\": \"青椒\"\n      }\n    ],\n    \"name\": \"青椒肉丝\",\n    \"own\": true,\n    \"steps\": [\n      \"里脊肉切丝，用生抽、料酒、淀粉腌制15分钟\",\n      \"青椒去籽切丝，大蒜切末\"\n    ]\n  }\n}",
@@ -625,7 +625,7 @@
               ],
               "query": []
             },
-            "description": "按 id/_id/recipeId 更新单条菜谱。recipeItemJson 必须是单个对象，不能传数组；必须带菜谱 ID，且菜谱必须已存在。支持只传要改的字段，不存在时返回 404，不会新增。",
+            "description": "按 id/_id/recipeId 更新单条菜谱。recipeItemJson 必须是单个对象，不能传数组；必须带菜谱 ID，且菜谱必须已存在。支持只传要改的字段，不存在时返回 404，不会新增。返回包含 recipeItem 和最新 recipeList。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"recipeItemJson\": {\n    \"id\": \"recipe_qjrs\",\n    \"favorite\": true,\n    \"difficulty\": \"简单\"\n  }\n}",
@@ -795,7 +795,7 @@
               ],
               "query": []
             },
-            "description": ""
+            "description": "根据当前设备默认家庭查询菜谱列表。返回 member、familyCode、recipeList；不会再返回 recipe.recipeJson.recipes 或 recipe.recipes。设备加入多个家庭时，此接口优先取 home 家庭。"
           },
           "response": []
         },
@@ -831,7 +831,7 @@
                 }
               ]
             },
-            "description": ""
+            "description": "按 familyCode 查询指定家庭菜谱列表，会校验当前设备是否有该家庭权限。返回 familyCode、recipeList；不会再返回 recipe.recipeJson.recipes 或 recipe.recipes。"
           },
           "response": []
         }
