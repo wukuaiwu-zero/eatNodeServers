@@ -822,7 +822,22 @@ async function upsertRecipeItem(familyCode, memberCode, recipeItem, options = {}
   const incomingId = rawRecipe && typeof rawRecipe === 'object'
     ? normalizeText(rawRecipe.id || rawRecipe._id || rawRecipe.recipeId)
     : '';
+  const mode = options.mode || 'upsert';
+
+  if (mode === 'update' && !incomingId) {
+    throw new TypeError('更新菜谱必须带菜谱 ID');
+  }
+
   const currentRecipe = incomingId ? await getRecipeItemByFamily(familyCode, incomingId) : null;
+
+  if (mode === 'create' && currentRecipe) {
+    throw createConflictError('菜谱已存在，不能重复新增');
+  }
+
+  if (mode === 'update' && !currentRecipe) {
+    throw createNotFoundError('菜谱不存在');
+  }
+
   const normalized = normalizeRecipeItem(recipeItem, currentRecipe);
   const coverUrl = normalizeCoverUrl(options.coverUrl) || normalized.coverUrl || null;
 

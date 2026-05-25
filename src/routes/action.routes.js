@@ -46,8 +46,8 @@ router.post('/leaveFamily', writeLimiter, familyController.leaveFamily);
 router.post('/createFamilyInvite', familyLimiter, familyController.createFamilyInvite);
 
 router.post('/saveFamilyRecipe', writeLimiter, familyRecipeController.uploadFamilyRecipe);
-router.post('/saveFamilyRecipeItem', writeLimiter, familyRecipeController.upsertFamilyRecipeItem);
-router.post('/updateFamilyRecipeItem', writeLimiter, familyRecipeController.upsertFamilyRecipeItem);
+router.post('/saveFamilyRecipeItem', writeLimiter, familyRecipeController.saveFamilyRecipeItem);
+router.post('/updateFamilyRecipeItem', writeLimiter, familyRecipeController.updateFamilyRecipeItem);
 router.post('/deleteFamilyRecipeItem', writeLimiter, familyRecipeController.deleteFamilyRecipeItem);
 router.post('/uploadFamilyRecipeCover', writeLimiter, familyRecipeController.uploadFamilyRecipeCover);
 router.post('/joinFamily', familyLimiter, familyRecipeController.joinFamily);

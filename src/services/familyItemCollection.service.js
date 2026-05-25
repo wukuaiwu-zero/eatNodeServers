@@ -59,11 +59,11 @@ function normalizeDate(value) {
 
 function normalizeTimeValue(value) {
   if (value instanceof Date) {
-    return value.getTime();
+    return value.toISOString();
   }
 
   if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
+    return new Date(value).toISOString();
   }
 
   if (typeof value === 'string') {
@@ -71,12 +71,12 @@ function normalizeTimeValue(value) {
     const numeric = Number(text);
 
     if (Number.isFinite(numeric) && text) {
-      return numeric;
+      return new Date(numeric).toISOString();
     }
 
     const parsed = Date.parse(text);
     if (!Number.isNaN(parsed)) {
-      return parsed;
+      return new Date(parsed).toISOString();
     }
   }
 

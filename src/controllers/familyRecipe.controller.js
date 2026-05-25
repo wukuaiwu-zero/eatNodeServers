@@ -161,7 +161,7 @@ async function uploadFamilyRecipeCover(req, res, next) {
   }
 }
 
-async function upsertFamilyRecipeItem(req, res, next) {
+async function handleFamilyRecipeItemUpsert(req, res, next, mode) {
   try {
     const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
     const recipeItem = req.body.recipeItemJson || req.body.recipeJson || req.body.recipe;
@@ -182,7 +182,8 @@ async function upsertFamilyRecipeItem(req, res, next) {
       familyCode,
       recipeItem,
       {
-        coverUrl: getInput(req, 'coverUrl') || getInput(req, 'cover_url')
+        coverUrl: getInput(req, 'coverUrl') || getInput(req, 'cover_url'),
+        mode
       }
     );
 
@@ -198,6 +199,14 @@ async function upsertFamilyRecipeItem(req, res, next) {
 
     return next(error);
   }
+}
+
+async function saveFamilyRecipeItem(req, res, next) {
+  return handleFamilyRecipeItemUpsert(req, res, next, 'create');
+}
+
+async function updateFamilyRecipeItem(req, res, next) {
+  return handleFamilyRecipeItemUpsert(req, res, next, 'update');
 }
 
 async function getFamilyRecipeItem(req, res, next) {
@@ -335,7 +344,8 @@ async function getFamilyRecipe(req, res, next) {
 module.exports = {
   uploadFamilyRecipe,
   uploadFamilyRecipeCover,
-  upsertFamilyRecipeItem,
+  saveFamilyRecipeItem,
+  updateFamilyRecipeItem,
   getFamilyRecipeItem,
   deleteFamilyRecipeItem,
   joinFamily,
