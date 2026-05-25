@@ -114,7 +114,11 @@ function normalizeRecipeItem(recipeItem, currentRecipe = null) {
   }
 
   const parsed = typeof recipeItem === 'string' ? JSON.parse(recipeItem) : recipeItem;
-  const rawRecipe = Array.isArray(parsed) ? parsed[0] : parsed;
+  if (Array.isArray(parsed)) {
+    throw new TypeError('单条菜谱接口只能提交一个菜谱对象');
+  }
+
+  const rawRecipe = parsed;
   const recipe = rawRecipe && typeof rawRecipe === 'object'
     ? { ...(currentRecipe || {}), ...rawRecipe }
     : rawRecipe;
@@ -810,7 +814,11 @@ async function getRecipeItemByFamily(familyCode, recipeId) {
 
 async function upsertRecipeItem(familyCode, memberCode, recipeItem, options = {}) {
   const parsed = typeof recipeItem === 'string' ? JSON.parse(recipeItem) : recipeItem;
-  const rawRecipe = Array.isArray(parsed) ? parsed[0] : parsed;
+  if (Array.isArray(parsed)) {
+    throw new TypeError('单条菜谱接口只能提交一个菜谱对象');
+  }
+
+  const rawRecipe = parsed;
   const incomingId = rawRecipe && typeof rawRecipe === 'object'
     ? normalizeText(rawRecipe.id || rawRecipe._id || rawRecipe.recipeId)
     : '';

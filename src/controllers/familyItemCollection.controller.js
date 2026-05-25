@@ -132,10 +132,14 @@ function createFamilyItemCollectionController(service, itemFieldName) {
 
   async function listItemsByMember(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
       const data = await service.listItemsByDevice(device.deviceId, {
+        familyCode,
         categoryId: getInput(req, 'categoryId') || getInput(req, 'category_id')
       });
 
@@ -151,12 +155,15 @@ function createFamilyItemCollectionController(service, itemFieldName) {
 
   async function getChangesByMember(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
       // since 是客户端上次同步到的服务端时间戳。
       // service 会返回之后发生变化的条目，包括已软删除的条目。
-      const data = await service.getChangesByDevice(device.deviceId, req.query.since);
+      const data = await service.getChangesByDevice(device.deviceId, req.query.since, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });

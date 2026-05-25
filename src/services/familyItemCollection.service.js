@@ -57,6 +57,32 @@ function normalizeDate(value) {
   return date.toISOString().slice(0, 10);
 }
 
+function normalizeTimeValue(value) {
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const text = value.trim();
+    const numeric = Number(text);
+
+    if (Number.isFinite(numeric) && text) {
+      return numeric;
+    }
+
+    const parsed = Date.parse(text);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
 function normalizeRawItem(itemJson) {
   if (itemJson === undefined || itemJson === null) {
     throw new TypeError('请填写条目数据');
@@ -115,6 +141,7 @@ function toItem(row, itemType, categoryName = null) {
     return null;
   }
 
+  const createTime = normalizeTimeValue(row.create_time);
   const base = {
     id: row.item_id,
     _id: row.item_id,
@@ -129,8 +156,8 @@ function toItem(row, itemType, categoryName = null) {
     categoryName: categoryName || row.category_name || null,
     category_name: categoryName || row.category_name || null,
     price: row.price,
-    create_time: row.create_time,
-    createTime: row.create_time,
+    create_time: createTime,
+    createTime,
     version: row.version,
     deleted: Boolean(row.deleted_at),
     deletedAt: row.deleted_at,
@@ -409,7 +436,8 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
   }
 
   async function listItemsByDevice(deviceId, options = {}) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+    const familyCode = normalizeText(options.familyCode || options.family_code);
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode || null);
 
     if (!member) {
       return null;
@@ -461,8 +489,9 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     return getChangesByFamily(member.familyCode, since);
   }
 
-  async function getChangesByDevice(deviceId, since) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+  async function getChangesByDevice(deviceId, since, options = {}) {
+    const familyCode = normalizeText(options.familyCode || options.family_code);
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode || null);
 
     if (!member) {
       return null;
