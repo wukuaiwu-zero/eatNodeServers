@@ -65,9 +65,12 @@ function createFamilyCategoryController(service, categoryFieldName) {
 
   async function listCategories(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
-      const data = await service.listCategoriesByDevice(device.deviceId);
+      const data = await service.listCategoriesByDevice(device.deviceId, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });
@@ -81,6 +84,9 @@ function createFamilyCategoryController(service, categoryFieldName) {
 
   async function deleteCategory(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const categoryId = normalizeText(
         getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'categoryId')
       );
@@ -92,7 +98,7 @@ function createFamilyCategoryController(service, categoryFieldName) {
         return res.status(400).json({ message: categoryIdError });
       }
 
-      const data = await service.deleteCategoryByDevice(device.deviceId, categoryId);
+      const data = await service.deleteCategoryByDevice(device.deviceId, categoryId, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });

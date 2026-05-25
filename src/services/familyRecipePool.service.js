@@ -271,8 +271,13 @@ async function listDishesByFamily(familyCode, options = {}) {
   return rows.map(toDish);
 }
 
-async function listDishesByDevice(deviceId) {
-  const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+async function getMemberByDevice(deviceId, options = {}) {
+  const familyCode = normalizeText(options.familyCode || options.family_code);
+  return familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode || null);
+}
+
+async function listDishesByDevice(deviceId, options = {}) {
+  const member = await getMemberByDevice(deviceId, options);
 
   if (!member) {
     return null;
@@ -318,8 +323,8 @@ async function deleteDishByFamily(familyCode, dishId, memberCode) {
   return getDishByFamily(familyCode, dishId);
 }
 
-async function deleteDishByDevice(deviceId, dishId) {
-  const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+async function deleteDishByDevice(deviceId, dishId, options = {}) {
+  const member = await getMemberByDevice(deviceId, options);
 
   if (!member) {
     return null;

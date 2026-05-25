@@ -65,9 +65,12 @@ async function upsertDish(req, res, next) {
 
 async function listDishes(req, res, next) {
   try {
+    const familyCode = normalizeText(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+    );
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
-    const data = await familyRecipePoolService.listDishesByDevice(device.deviceId);
+    const data = await familyRecipePoolService.listDishesByDevice(device.deviceId, { familyCode });
 
     if (!data) {
       return res.status(404).json({ message: '家庭成员不存在' });
@@ -81,6 +84,9 @@ async function listDishes(req, res, next) {
 
 async function deleteDish(req, res, next) {
   try {
+    const familyCode = normalizeText(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+    );
     const dishId = normalizeText(getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'dishId'));
     const dishIdError = validateText(dishId, '菜品 ID', DISH_ID_MAX_LENGTH);
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
@@ -90,7 +96,7 @@ async function deleteDish(req, res, next) {
       return res.status(400).json({ message: dishIdError });
     }
 
-    const data = await familyRecipePoolService.deleteDishByDevice(device.deviceId, dishId);
+    const data = await familyRecipePoolService.deleteDishByDevice(device.deviceId, dishId, { familyCode });
 
     if (!data) {
       return res.status(404).json({ message: '家庭成员不存在' });

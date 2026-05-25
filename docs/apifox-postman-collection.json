@@ -1114,10 +1114,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "删除指定家庭下的条目。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"shop_tomato\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"shop_tomato\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1159,10 +1159,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "批量删除指定家庭下的条目。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"ids\": [\"shop_tomato\", \"shop_milk\"]\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ids\": [\n    \"shop_tomato\",\n    \"shop_milk\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1199,7 +1199,16 @@
               ],
               "query": []
             },
-            "description": "软删除 done 为 true 的购物清单条目。"
+            "description": "软删除指定家庭下 done 为 true 的购物清单条目。设备必须已加入该家庭。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
@@ -1482,10 +1491,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "删除指定家庭下的条目。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"ingredient_coriander\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"ingredient_coriander\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1527,10 +1536,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "批量删除指定家庭下的条目。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"ids\": [\"ingredient_coriander\", \"ingredient_rice\"]\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ids\": [\n    \"ingredient_coriander\",\n    \"ingredient_rice\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1567,7 +1576,16 @@
               ],
               "query": []
             },
-            "description": "软删除 expire_date < CURDATE() 的食材。"
+            "description": "软删除指定家庭下 expire_date < CURDATE() 的食材。设备必须已加入该家庭。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }
@@ -1683,7 +1701,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyShoppingCategories",
+              "raw": "{{baseUrl}}/api/getFamilyShoppingCategories?familyCode={{familyCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1691,9 +1709,14 @@
                 "api",
                 "getFamilyShoppingCategories"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
             },
-            "description": "返回购物清单分类列表，categories 每一项包含 name 字段。"
+            "description": "返回购物清单分类列表，categories 每一项包含 name 字段。 切换家庭时传当前选中的 familyCode。"
           },
           "response": [
             {
@@ -1743,10 +1766,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "删除指定家庭分类。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"shopping_cat_xxx\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"shopping_cat_xxx\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1818,7 +1841,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyIngredientCategories",
+              "raw": "{{baseUrl}}/api/getFamilyIngredientCategories?familyCode={{familyCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1826,9 +1849,14 @@
                 "api",
                 "getFamilyIngredientCategories"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
             },
-            "description": "返回家庭库存分类列表，categories 每一项包含 name 字段。"
+            "description": "返回家庭库存分类列表，categories 每一项包含 name 字段。 切换家庭时传当前选中的 familyCode。"
           },
           "response": [
             {
@@ -1878,10 +1906,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "删除指定家庭分类。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"ingredient_cat_xxx\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"ingredient_cat_xxx\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1953,7 +1981,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipeCategories",
+              "raw": "{{baseUrl}}/api/getFamilyRecipeCategories?familyCode={{familyCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1961,9 +1989,14 @@
                 "api",
                 "getFamilyRecipeCategories"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
             },
-            "description": ""
+            "description": "返回分类列表。 切换家庭时传当前选中的 familyCode。"
           },
           "response": []
         },
@@ -1999,10 +2032,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "删除指定家庭分类。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"recipe_cat_xxx\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"recipe_cat_xxx\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2079,7 +2112,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipePoolItems",
+              "raw": "{{baseUrl}}/api/getFamilyRecipePoolItems?familyCode={{familyCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2087,9 +2120,14 @@
                 "api",
                 "getFamilyRecipePoolItems"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
             },
-            "description": ""
+            "description": "查询指定家庭菜品随机池。切换家庭时传当前选中的 familyCode。"
           },
           "response": []
         },
@@ -2125,10 +2163,10 @@
               ],
               "query": []
             },
-            "description": "",
+            "description": "删除指定家庭下的条目。设备必须已加入该家庭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"default_dish_1\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"default_dish_1\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2160,7 +2198,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyData",
+              "raw": "{{baseUrl}}/api/getFamilyData?familyCode={{familyCode}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2168,9 +2206,14 @@
                 "api",
                 "getFamilyData"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
             },
-            "description": "返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems。"
+            "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems。"
           },
           "response": []
         }

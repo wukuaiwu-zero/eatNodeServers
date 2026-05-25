@@ -562,8 +562,13 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     return { member, item };
   }
 
-  async function deleteItemByDevice(deviceId, itemId) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+  async function getMemberByDevice(deviceId, options = {}) {
+    const familyCode = normalizeText(options.familyCode || options.family_code);
+    return familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode || null);
+  }
+
+  async function deleteItemByDevice(deviceId, itemId, options = {}) {
+    const member = await getMemberByDevice(deviceId, options);
 
     if (!member) {
       return null;
@@ -578,8 +583,8 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     return { member, item };
   }
 
-  async function deleteItemsByDevice(deviceId, itemIds) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+  async function deleteItemsByDevice(deviceId, itemIds, options = {}) {
+    const member = await getMemberByDevice(deviceId, options);
 
     if (!member) {
       return null;
@@ -598,8 +603,8 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     return { member, items, deletedCount: items.length };
   }
 
-  async function deleteItemsByCondition(deviceId, whereSql, params, mockPredicate) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+  async function deleteItemsByCondition(deviceId, whereSql, params, mockPredicate, options = {}) {
+    const member = await getMemberByDevice(deviceId, options);
 
     if (!member) {
       return null;
@@ -642,21 +647,23 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     return { member, items, deletedCount: items.length };
   }
 
-  async function clearExpiredItemsByDevice(deviceId) {
+  async function clearExpiredItemsByDevice(deviceId, options = {}) {
     return deleteItemsByCondition(
       deviceId,
       'expire_date IS NOT NULL AND expire_date < CURDATE()',
       [],
-      (row) => row.expire_date && row.expire_date < new Date().toISOString().slice(0, 10)
+      (row) => row.expire_date && row.expire_date < new Date().toISOString().slice(0, 10),
+      options
     );
   }
 
-  async function clearPurchasedItemsByDevice(deviceId) {
+  async function clearPurchasedItemsByDevice(deviceId, options = {}) {
     return deleteItemsByCondition(
       deviceId,
       'done = 1',
       [],
-      (row) => Number(row.done) === 1
+      (row) => Number(row.done) === 1,
+      options
     );
   }
 

@@ -22,6 +22,10 @@ function normalizeName(name) {
   return typeof name === 'string' ? name.trim() : '';
 }
 
+function normalizeFamilyCode(familyCode) {
+  return typeof familyCode === 'string' ? familyCode.trim() : '';
+}
+
 function normalizeSortOrder(sortOrder) {
   const value = Number(sortOrder);
   return Number.isFinite(value) ? Math.trunc(value) : 0;
@@ -267,8 +271,9 @@ function createFamilyCategoryService({ tableName, idPrefix, defaultCategories })
     return rows.map(toCategory);
   }
 
-  async function listCategoriesByDevice(deviceId) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+  async function listCategoriesByDevice(deviceId, options = {}) {
+    const familyCode = normalizeFamilyCode(options.familyCode || options.family_code);
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode || null);
 
     if (!member) {
       return null;
@@ -314,8 +319,9 @@ function createFamilyCategoryService({ tableName, idPrefix, defaultCategories })
     return getCategoryByFamily(familyCode, categoryId);
   }
 
-  async function deleteCategoryByDevice(deviceId, categoryId) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+  async function deleteCategoryByDevice(deviceId, categoryId, options = {}) {
+    const familyCode = normalizeFamilyCode(options.familyCode || options.family_code);
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode || null);
 
     if (!member) {
       return null;

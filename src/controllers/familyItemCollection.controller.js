@@ -178,6 +178,9 @@ function createFamilyItemCollectionController(service, itemFieldName) {
   async function deleteItem(req, res, next) {
     try {
       // DELETE 请求有些客户端不方便带 body，所以这里同时支持 body 和 query。
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const itemId = normalizeText(getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'itemId'));
       const itemIdError = validateText(itemId, '条目 ID', ITEM_ID_MAX_LENGTH);
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
@@ -187,7 +190,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
         return res.status(400).json({ message: itemIdError });
       }
 
-      const data = await service.deleteItemByDevice(device.deviceId, itemId);
+      const data = await service.deleteItemByDevice(device.deviceId, itemId, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });
@@ -201,6 +204,9 @@ function createFamilyItemCollectionController(service, itemFieldName) {
 
   async function deleteItems(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const itemIds = parseItemIds(req);
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
@@ -213,7 +219,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
         return res.status(400).json({ message: `条目 ID 太长了，不能超过 ${ITEM_ID_MAX_LENGTH} 个字符` });
       }
 
-      const data = await service.deleteItemsByDevice(device.deviceId, itemIds);
+      const data = await service.deleteItemsByDevice(device.deviceId, itemIds, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });
@@ -227,9 +233,12 @@ function createFamilyItemCollectionController(service, itemFieldName) {
 
   async function clearExpiredItems(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
-      const data = await service.clearExpiredItemsByDevice(device.deviceId);
+      const data = await service.clearExpiredItemsByDevice(device.deviceId, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });
@@ -243,9 +252,12 @@ function createFamilyItemCollectionController(service, itemFieldName) {
 
   async function clearPurchasedItems(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
       const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
-      const data = await service.clearPurchasedItemsByDevice(device.deviceId);
+      const data = await service.clearPurchasedItemsByDevice(device.deviceId, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });
