@@ -755,7 +755,7 @@
               ],
               "query": []
             },
-            "description": "支持 jpeg/png/webp/gif，最大 4MB。返回 coverUrl。",
+            "description": "只上传封面图片并返回 coverUrl，不会修改任何菜谱。拿到 coverUrl 后，再调用 updateFamilyRecipeItem，并在 recipeItemJson 里带对应菜谱 id + cover/coverUrl。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"imageData\": \"data:image/png;base64,iVBORw0KGgo=\"\n}",
@@ -795,7 +795,7 @@
               ],
               "query": []
             },
-            "description": "根据当前设备默认家庭查询菜谱列表。返回 member、familyCode、recipeList；不会再返回 recipe.recipeJson.recipes 或 recipe.recipes。设备加入多个家庭时，此接口优先取 home 家庭。"
+            "description": "根据当前设备默认家庭查询菜谱列表。返回 member、familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。设备加入多个家庭时，此接口优先取 home 家庭。"
           },
           "response": []
         },
@@ -831,7 +831,7 @@
                 }
               ]
             },
-            "description": "按 familyCode 查询指定家庭菜谱列表，会校验当前设备是否有该家庭权限。返回 familyCode、recipeList；不会再返回 recipe.recipeJson.recipes 或 recipe.recipes。"
+            "description": "按 familyCode 查询指定家庭菜谱列表，会校验当前设备是否有该家庭权限。返回 familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。"
           },
           "response": []
         }

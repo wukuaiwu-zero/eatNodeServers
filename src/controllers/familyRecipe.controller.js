@@ -92,9 +92,12 @@ function saveCoverImage(familyCode, image) {
   return `/uploads/recipe-covers/${familyCode}/${filename}`;
 }
 
-function toRecipeListResponse(recipe) {
+function toRecipeListResponse(recipe, fallbackFamilyCode = '') {
   if (!recipe) {
-    return recipe;
+    return {
+      familyCode: fallbackFamilyCode,
+      recipeList: []
+    };
   }
 
   return {
@@ -111,7 +114,7 @@ function withRecipeListResponse(data) {
   const { recipe, ...rest } = data;
   return {
     ...rest,
-    ...toRecipeListResponse(recipe)
+    ...toRecipeListResponse(recipe, data.member?.familyCode)
   };
 }
 
@@ -163,15 +166,10 @@ async function uploadFamilyRecipeCover(req, res, next) {
 
     const image = normalizeImageInput(req);
     const coverUrl = saveCoverImage(familyCode, image);
-    const data = await familyRecipeService.updateFamilyRecipeCoverByDevice(
-      device.deviceId,
-      familyCode,
-      coverUrl
-    );
 
     return res.json({
       data: {
-        ...data,
+        familyCode,
         coverUrl
       }
     });
@@ -329,10 +327,6 @@ async function getFamilyRecipeByMember(req, res, next) {
       return res.status(404).json({ message: '家庭成员不存在' });
     }
 
-    if (!data.recipe) {
-      return res.status(404).json({ message: '家庭菜谱不存在' });
-    }
-
     return res.json({ data: withRecipeListResponse(data) });
   } catch (error) {
     return next(error);
@@ -354,11 +348,7 @@ async function getFamilyRecipe(req, res, next) {
 
     const recipe = await familyRecipeService.getFamilyRecipeByCode(familyCode);
 
-    if (!recipe) {
-      return res.status(404).json({ message: '家庭菜谱不存在' });
-    }
-
-    return res.json({ data: toRecipeListResponse(recipe) });
+    return res.json({ data: toRecipeListResponse(recipe, familyCode) });
   } catch (error) {
     return next(error);
   }
