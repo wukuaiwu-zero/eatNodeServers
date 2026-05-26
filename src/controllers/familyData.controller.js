@@ -5,6 +5,7 @@ const familyShoppingCategoryService = require('../services/familyShoppingCategor
 const familyIngredientCategoryService = require('../services/familyIngredientCategory.service');
 const familyRecipeCategoryService = require('../services/familyRecipeCategory.service');
 const familyRecipePoolService = require('../services/familyRecipePool.service');
+const familyConsumptionService = require('../services/familyConsumption.service');
 const deviceService = require('../services/device.service');
 const familyService = require('../services/family.service');
 const { getDeviceCredentials, normalizeText } = require('../utils/request');
@@ -38,6 +39,7 @@ async function getFamilyJsonData(req, res, next) {
     const ingredientCategories = await familyIngredientCategoryService.listCategoriesByFamily(member.familyCode);
     const recipeCategories = await familyRecipeCategoryService.listCategoriesByFamily(member.familyCode);
     const recipePoolItems = await familyRecipePoolService.listDishesByFamily(member.familyCode);
+    const consumptionRecords = await familyConsumptionService.listRecordsByFamily(member.familyCode);
 
     // 返回字段明确拆成三块：
     // - familyRecipe：兼容旧字段，值为 { recipes: [...] }。
@@ -54,7 +56,8 @@ async function getFamilyJsonData(req, res, next) {
         shoppingCategories,
         ingredientCategories,
         recipeCategories,
-        recipePoolItems
+        recipePoolItems,
+        consumptionRecords
       }
     });
   } catch (error) {

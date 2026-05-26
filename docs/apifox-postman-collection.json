@@ -144,6 +144,87 @@
           ]
         },
         {
+          "name": "查询我的家庭列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getMyFamilies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getMyFamilies"
+              ],
+              "query": []
+            },
+            "description": "查询当前设备已加入的家庭列表。返回 homeFamilyCode、familyCodeList、families；前端家庭切换器建议使用 families。"
+          },
+          "response": [
+            {
+              "name": "示例响应",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Device-Id",
+                    "value": "{{deviceId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Device-Secret",
+                    "value": "{{deviceSecret}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/getMyFamilies",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "getMyFamilies"
+                  ],
+                  "query": []
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"homeFamilyCode\": \"fam_xxx\",\n    \"familyCodeList\": [\n      \"fam_xxx\"\n    ],\n    \"families\": [\n      {\n        \"id\": 1,\n        \"familyCode\": \"fam_xxx\",\n        \"familyName\": \"我的厨房\",\n        \"avatarUrl\": null,\n        \"isDeleted\": false,\n        \"createdByDeviceId\": \"dev_xxx\",\n        \"relationType\": \"home\",\n        \"isHomeFamily\": true,\n        \"role\": \"owner\",\n        \"createdAt\": \"2026-05-26T00:00:00.000Z\",\n        \"updatedAt\": \"2026-05-26T00:00:00.000Z\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
           "name": "查询家庭",
           "request": {
             "method": "GET",
@@ -2179,6 +2260,293 @@
       ]
     },
     {
+      "name": "消费记录",
+      "item": [
+        {
+          "name": "新增消费记录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyConsumptionRecord",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "saveFamilyConsumptionRecord"
+              ],
+              "query": []
+            },
+            "description": "新增/保存指定家庭消费记录。_id/create_time 可不传，后端会生成；前端已有本地 ID/创建时间时也可以传入用于同步。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"consumptionRecordJson\": {\n    \"_id\": \"mplyr982s0h5s\",\n    \"name\": \"荔枝1\",\n    \"price\": 20,\n    \"categoryId\": \"shopping_cat_other\",\n    \"date\": \"2026-05-26\",\n    \"create_time\": 1779759336818\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "更新消费记录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/updateFamilyConsumptionRecord",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "updateFamilyConsumptionRecord"
+              ],
+              "query": []
+            },
+            "description": "更新指定家庭消费记录。按 familyCode + _id/id/recordId upsert，消费记录允许修改实际金额、名称、分类和日期。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"consumptionRecordJson\": {\n    \"_id\": \"mplyr982s0h5s\",\n    \"name\": \"荔枝1\",\n    \"price\": 18.5,\n    \"categoryId\": \"shopping_cat_other\",\n    \"date\": \"2026-05-26\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询单条消费记录",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyConsumptionRecord?familyCode={{familyCode}}&id=mplyr982s0h5s",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyConsumptionRecord"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "id",
+                  "value": "mplyr982s0h5s"
+                }
+              ]
+            },
+            "description": "查询指定家庭单条消费记录。设备必须已加入该家庭。"
+          },
+          "response": []
+        },
+        {
+          "name": "查询消费记录列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyConsumptionRecords?familyCode={{familyCode}}&categoryId=shopping_cat_other&startTime=2026-05-01&endTime=2026-05-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyConsumptionRecords"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "categoryId",
+                  "value": "shopping_cat_other"
+                },
+                {
+                  "key": "startTime",
+                  "value": "2026-05-01"
+                },
+                {
+                  "key": "endTime",
+                  "value": "2026-05-31"
+                }
+              ]
+            },
+            "description": "查询指定家庭消费记录列表。可选 categoryId/startTime/endTime 过滤；startTime/endTime 格式为 YYYY-MM-DD，后端分别按 00:00:00 和 23:59:59 处理。切换家庭时传当前选中的 familyCode。"
+          },
+          "response": []
+        },
+        {
+          "name": "按时间范围查询消费记录",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyConsumptionRecords?familyCode={{familyCode}}&startTime=2026-05-01&endTime=2026-05-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyConsumptionRecords"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "startTime",
+                  "value": "2026-05-01"
+                },
+                {
+                  "key": "endTime",
+                  "value": "2026-05-31"
+                }
+              ]
+            },
+            "description": "按消费时间范围查询指定家庭消费记录。startTime/endTime 格式为 YYYY-MM-DD，后端分别补 00:00:00 和 23:59:59。"
+          },
+          "response": []
+        },
+        {
+          "name": "删除消费记录",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyConsumptionRecord",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyConsumptionRecord"
+              ],
+              "query": []
+            },
+            "description": "软删除指定家庭消费记录。消费记录允许删除，删除后列表默认不返回。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"mplyr982s0h5s\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "聚合数据",
       "item": [
         {
@@ -2213,7 +2581,7 @@
                 }
               ]
             },
-            "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems。"
+            "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems、consumptionRecords。"
           },
           "response": []
         }
