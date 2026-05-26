@@ -1,5 +1,6 @@
 const deviceService = require('../services/device.service');
 const { getDeviceCredentials } = require('../utils/request');
+const { paginateDataList } = require('../utils/pagination');
 
 const FAMILY_CODE_MAX_LENGTH = 100;
 const CATEGORY_ID_MAX_LENGTH = 100;
@@ -76,7 +77,7 @@ function createFamilyCategoryController(service, categoryFieldName) {
         return res.status(404).json({ message: '家庭成员不存在' });
       }
 
-      return res.json({ data });
+      return res.json({ data: paginateDataList(req, data, 'categories') });
     } catch (error) {
       return next(error);
     }

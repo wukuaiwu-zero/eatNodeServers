@@ -5,6 +5,7 @@ const familyRecipeService = require('../services/familyRecipe.service');
 const familyService = require('../services/family.service');
 const deviceService = require('../services/device.service');
 const { getDeviceCredentials } = require('../utils/request');
+const { paginateDataList } = require('../utils/pagination');
 
 const FAMILY_CODE_MAX_LENGTH = 100;
 const RECIPE_ID_MAX_LENGTH = 100;
@@ -327,7 +328,7 @@ async function getFamilyRecipeByMember(req, res, next) {
       return res.status(404).json({ message: '家庭成员不存在' });
     }
 
-    return res.json({ data: withRecipeListResponse(data) });
+    return res.json({ data: paginateDataList(req, withRecipeListResponse(data), 'recipeList') });
   } catch (error) {
     return next(error);
   }
@@ -348,7 +349,7 @@ async function getFamilyRecipe(req, res, next) {
 
     const recipe = await familyRecipeService.getFamilyRecipeByCode(familyCode);
 
-    return res.json({ data: toRecipeListResponse(recipe, familyCode) });
+    return res.json({ data: paginateDataList(req, toRecipeListResponse(recipe, familyCode), 'recipeList') });
   } catch (error) {
     return next(error);
   }

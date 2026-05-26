@@ -1,6 +1,7 @@
 const deviceService = require('../services/device.service');
 const familyRecipePoolService = require('../services/familyRecipePool.service');
 const { getDeviceCredentials } = require('../utils/request');
+const { paginateDataList } = require('../utils/pagination');
 
 const FAMILY_CODE_MAX_LENGTH = 100;
 const DISH_ID_MAX_LENGTH = 100;
@@ -76,7 +77,7 @@ async function listDishes(req, res, next) {
       return res.status(404).json({ message: '家庭成员不存在' });
     }
 
-    return res.json({ data });
+    return res.json({ data: paginateDataList(req, data, 'dishes') });
   } catch (error) {
     return next(error);
   }

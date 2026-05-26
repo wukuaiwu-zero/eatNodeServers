@@ -165,7 +165,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getMyFamilies",
+              "raw": "{{baseUrl}}/api/getMyFamilies?page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -173,9 +173,18 @@
                 "api",
                 "getMyFamilies"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
             },
-            "description": "查询当前设备已加入的家庭列表。返回 homeFamilyCode、familyCodeList、families；前端家庭切换器建议使用 families。"
+            "description": "查询当前设备已加入的家庭列表。返回 homeFamilyCode、familyCodeList、families；前端家庭切换器建议使用 families。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": [
             {
@@ -367,7 +376,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyMembers?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyMembers?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -379,10 +388,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "返回 name/title/avatarUrl/role/isManager。"
+            "description": "返回 name/title/avatarUrl/role/isManager。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -866,7 +883,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipeByMember",
+              "raw": "{{baseUrl}}/api/getFamilyRecipeByMember?page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -874,9 +891,18 @@
                 "api",
                 "getFamilyRecipeByMember"
               ],
-              "query": []
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
             },
-            "description": "根据当前设备默认家庭查询菜谱列表。返回 member、familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。设备加入多个家庭时，此接口优先取 home 家庭。"
+            "description": "根据当前设备默认家庭查询菜谱列表。返回 member、familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。设备加入多个家庭时，此接口优先取 home 家庭。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -897,7 +923,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipe?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyRecipe?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -909,10 +935,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "按 familyCode 查询指定家庭菜谱列表，会校验当前设备是否有该家庭权限。返回 familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。"
+            "description": "按 familyCode 查询指定家庭菜谱列表，会校验当前设备是否有该家庭权限。返回 familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         }
@@ -1064,7 +1098,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyShoppingItems?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyShoppingItems?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1076,10 +1110,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "查询指定家庭购物清单。建议设备加入多个家庭时始终传 familyCode，避免查到默认家庭。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。"
+            "description": "查询指定家庭购物清单。建议设备加入多个家庭时始终传 familyCode，避免查到默认家庭。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -1100,7 +1142,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyShoppingItems?familyCode={{familyCode}}&categoryId=shopping_cat_vegetable",
+              "raw": "{{baseUrl}}/api/getFamilyShoppingItems?familyCode={{familyCode}}&categoryId=shopping_cat_vegetable&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1116,10 +1158,18 @@
                 {
                   "key": "categoryId",
                   "value": "shopping_cat_vegetable"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "按分类查询指定家庭购物清单。返回 create_time/createTime 为 ISO 字符串。"
+            "description": "按分类查询指定家庭购物清单。返回 create_time/createTime 为 ISO 字符串。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -1441,7 +1491,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyIngredientItems?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyIngredientItems?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1453,10 +1503,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "查询指定家庭食材库。建议设备加入多个家庭时始终传 familyCode，避免查到默认家庭。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。"
+            "description": "查询指定家庭食材库。建议设备加入多个家庭时始终传 familyCode，避免查到默认家庭。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -1477,7 +1535,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyIngredientItems?familyCode={{familyCode}}&categoryId=ingredient_cat_staple",
+              "raw": "{{baseUrl}}/api/getFamilyIngredientItems?familyCode={{familyCode}}&categoryId=ingredient_cat_staple&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1493,10 +1551,18 @@
                 {
                   "key": "categoryId",
                   "value": "ingredient_cat_staple"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "按分类查询指定家庭食材库。返回 create_time/createTime 为 ISO 字符串。"
+            "description": "按分类查询指定家庭食材库。返回 create_time/createTime 为 ISO 字符串。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -1782,7 +1848,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyShoppingCategories?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyShoppingCategories?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1794,10 +1860,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "返回购物清单分类列表，categories 每一项包含 name 字段。 切换家庭时传当前选中的 familyCode。"
+            "description": "返回购物清单分类列表，categories 每一项包含 name 字段。 切换家庭时传当前选中的 familyCode。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": [
             {
@@ -1922,7 +1996,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyIngredientCategories?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyIngredientCategories?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1934,10 +2008,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "返回家庭库存分类列表，categories 每一项包含 name 字段。 切换家庭时传当前选中的 familyCode。"
+            "description": "返回家庭库存分类列表，categories 每一项包含 name 字段。 切换家庭时传当前选中的 familyCode。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": [
             {
@@ -2062,7 +2144,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipeCategories?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyRecipeCategories?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2074,10 +2156,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "返回分类列表。 切换家庭时传当前选中的 familyCode。"
+            "description": "返回分类列表。 切换家庭时传当前选中的 familyCode。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -2193,7 +2283,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipePoolItems?familyCode={{familyCode}}",
+              "raw": "{{baseUrl}}/api/getFamilyRecipePoolItems?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2205,10 +2295,18 @@
                 {
                   "key": "familyCode",
                   "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "查询指定家庭菜品随机池。切换家庭时传当前选中的 familyCode。"
+            "description": "查询指定家庭菜品随机池。切换家庭时传当前选中的 familyCode。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -2419,7 +2517,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyConsumptionRecords?familyCode={{familyCode}}&categoryId=shopping_cat_other&startTime=2026-05-01&endTime=2026-05-31",
+              "raw": "{{baseUrl}}/api/getFamilyConsumptionRecords?familyCode={{familyCode}}&categoryId=shopping_cat_other&startTime=2026-05-01&endTime=2026-05-31&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2443,10 +2541,18 @@
                 {
                   "key": "endTime",
                   "value": "2026-05-31"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "查询指定家庭消费记录列表。可选 categoryId/startTime/endTime 过滤；startTime/endTime 格式为 YYYY-MM-DD，后端分别按 00:00:00 和 23:59:59 处理。切换家庭时传当前选中的 familyCode。"
+            "description": "查询指定家庭消费记录列表。可选 categoryId/startTime/endTime 过滤；startTime/endTime 格式为 YYYY-MM-DD，后端分别按 00:00:00 和 23:59:59 处理。切换家庭时传当前选中的 familyCode。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },
@@ -2472,7 +2578,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyConsumptionRecords?familyCode={{familyCode}}&startTime=2026-05-01&endTime=2026-05-31",
+              "raw": "{{baseUrl}}/api/getFamilyConsumptionRecords?familyCode={{familyCode}}&startTime=2026-05-01&endTime=2026-05-31&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -2492,10 +2598,18 @@
                 {
                   "key": "endTime",
                   "value": "2026-05-31"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
                 }
               ]
             },
-            "description": "按消费时间范围查询指定家庭消费记录。startTime/endTime 格式为 YYYY-MM-DD，后端分别补 00:00:00 和 23:59:59。"
+            "description": "按消费时间范围查询指定家庭消费记录。startTime/endTime 格式为 YYYY-MM-DD，后端分别补 00:00:00 和 23:59:59。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         },

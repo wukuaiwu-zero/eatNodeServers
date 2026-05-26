@@ -2,6 +2,7 @@ const familyService = require('../services/family.service');
 const familyRecipeService = require('../services/familyRecipe.service');
 const deviceService = require('../services/device.service');
 const { getDeviceCredentials } = require('../utils/request');
+const { getPagination, paginateItems, paginateDataList } = require('../utils/pagination');
 
 const FAMILY_CODE_MAX_LENGTH = 100;
 const FAMILY_NAME_MAX_LENGTH = 100;
@@ -96,8 +97,13 @@ async function getMyFamilies(req, res, next) {
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
     const data = await familyRecipeService.getFamilySummaryByDevice(device.deviceId);
+    const paginated = paginateDataList(req, data, 'families');
 
-    return res.json({ data });
+    if (paginated.pagination) {
+      paginated.familyCodeList = paginated.families.map((family) => family.familyCode);
+    }
+
+    return res.json({ data: paginated });
   } catch (error) {
     return next(error);
   }
@@ -216,6 +222,13 @@ async function listFamilyMembers(req, res, next) {
     await familyService.assertDeviceCanAccessFamily(device.deviceId, familyCode);
 
     const members = await familyRecipeService.listFamilyMembers(familyCode);
+    const pagination = getPagination(req);
+    const paged = paginateItems(members, pagination);
+
+    if (paged.pagination) {
+      return res.json({ data: paged.items, pagination: paged.pagination });
+    }
+
     return res.json({ data: members });
   } catch (error) {
     return next(error);
