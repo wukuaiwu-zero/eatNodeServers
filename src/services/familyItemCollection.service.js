@@ -386,8 +386,9 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
     return { member, item };
   }
 
-  async function getItemByDevice(deviceId, itemId) {
-    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId);
+  async function getItemByDevice(deviceId, itemId, options = {}) {
+    const familyCode = normalizeText(options.familyCode || options.family_code);
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode || null);
 
     if (!member) {
       return null;

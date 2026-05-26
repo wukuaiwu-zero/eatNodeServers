@@ -106,6 +106,9 @@ function createFamilyItemCollectionController(service, itemFieldName) {
 
   async function getItem(req, res, next) {
     try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
       const itemId = normalizeText(getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'itemId'));
       const itemIdError = validateText(itemId, '条目 ID', ITEM_ID_MAX_LENGTH);
       const { deviceId, deviceSecret } = getDeviceCredentials(req);
@@ -115,7 +118,7 @@ function createFamilyItemCollectionController(service, itemFieldName) {
         return res.status(400).json({ message: itemIdError });
       }
 
-      const data = await service.getItemByDevice(device.deviceId, itemId);
+      const data = await service.getItemByDevice(device.deviceId, itemId, { familyCode });
 
       if (!data) {
         return res.status(404).json({ message: '家庭成员不存在' });

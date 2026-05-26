@@ -1062,7 +1062,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyShoppingItem?id=shop_tomato",
+              "raw": "{{baseUrl}}/api/getFamilyShoppingItem?familyCode={{familyCode}}&id=shop_tomato",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1072,12 +1072,16 @@
               ],
               "query": [
                 {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
                   "key": "id",
                   "value": "shop_tomato"
                 }
               ]
             },
-            "description": ""
+            "description": "查询指定家庭单条购物清单。设备加入多个家庭时建议始终传 familyCode。"
           },
           "response": []
         },
@@ -1455,7 +1459,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyIngredientItem?id=ingredient_coriander",
+              "raw": "{{baseUrl}}/api/getFamilyIngredientItem?familyCode={{familyCode}}&id=ingredient_coriander",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1465,12 +1469,16 @@
               ],
               "query": [
                 {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
                   "key": "id",
                   "value": "ingredient_coriander"
                 }
               ]
             },
-            "description": ""
+            "description": "查询指定家庭单条食材。设备加入多个家庭时建议始终传 familyCode。"
           },
           "response": []
         },
