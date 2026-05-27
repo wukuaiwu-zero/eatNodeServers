@@ -11,6 +11,7 @@ const familyRecipeCategoryController = require('../controllers/familyRecipeCateg
 const familyRecipePoolController = require('../controllers/familyRecipePool.controller');
 const familyDataController = require('../controllers/familyData.controller');
 const familyConsumptionController = require('../controllers/familyConsumption.controller');
+const familyDietPreferenceController = require('../controllers/familyDietPreference.controller');
 const { createRateLimiter } = require('../middlewares/rateLimit.middleware');
 
 const router = express.Router();
@@ -97,6 +98,12 @@ router.post('/updateFamilyConsumptionRecord', writeLimiter, familyConsumptionCon
 router.get('/getFamilyConsumptionRecord', familyConsumptionController.getRecord);
 router.get('/getFamilyConsumptionRecords', familyConsumptionController.listRecords);
 router.post('/deleteFamilyConsumptionRecord', writeLimiter, familyConsumptionController.deleteRecord);
+
+router.post('/saveFamilyDietPreference', writeLimiter, familyDietPreferenceController.upsertPreference);
+router.post('/updateFamilyDietPreference', writeLimiter, familyDietPreferenceController.upsertPreference);
+router.get('/getFamilyDietPreference', familyDietPreferenceController.getPreference);
+router.get('/getFamilyDietPreferences', familyDietPreferenceController.listPreferences);
+router.post('/deleteFamilyDietPreference', writeLimiter, familyDietPreferenceController.deletePreference);
 
 router.get('/getFamilyData', familyDataController.getFamilyJsonData);
 

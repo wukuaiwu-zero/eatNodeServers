@@ -2669,6 +2669,293 @@
       ]
     },
     {
+      "name": "饮食偏好",
+      "item": [
+        {
+          "name": "新增饮食偏好",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyDietPreference",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "saveFamilyDietPreference"
+              ],
+              "query": []
+            },
+            "description": "新增/保存指定家庭饮食偏好。类型枚举：family_taste=全家口味，avoid_food=忌口不吃。 _id 可不传，后端会生成。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dietPreferenceJson\": {\n    \"_id\": \"pref_spicy\",\n    \"title\": \"少油少盐，微辣\",\n    \"type\": \"family_taste\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "更新饮食偏好",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/updateFamilyDietPreference",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "updateFamilyDietPreference"
+              ],
+              "query": []
+            },
+            "description": "更新指定家庭饮食偏好。按 familyCode + _id/id/preferenceId upsert。类型枚举：family_taste=全家口味，avoid_food=忌口不吃。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dietPreferenceJson\": {\n    \"_id\": \"pref_spicy\",\n    \"title\": \"少油少盐，不太辣\",\n    \"preferenceType\": \"family_taste\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询单条饮食偏好",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyDietPreference?familyCode={{familyCode}}&id=pref_spicy",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyDietPreference"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "id",
+                  "value": "pref_spicy"
+                }
+              ]
+            },
+            "description": "查询指定家庭单条饮食偏好。设备必须已加入该家庭。"
+          },
+          "response": []
+        },
+        {
+          "name": "查询饮食偏好列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyDietPreferences?familyCode={{familyCode}}&page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyDietPreferences"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "查询指定家庭饮食偏好列表。支持可选分页参数 page/pageSize；不传时返回完整列表。类型枚举：family_taste=全家口味，avoid_food=忌口不吃。"
+          },
+          "response": []
+        },
+        {
+          "name": "按类型查询饮食偏好",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyDietPreferences?familyCode={{familyCode}}&type=avoid_food&page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyDietPreferences"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "type",
+                  "value": "avoid_food"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "按类型查询指定家庭饮食偏好。类型枚举：family_taste=全家口味，avoid_food=忌口不吃。"
+          },
+          "response": []
+        },
+        {
+          "name": "删除饮食偏好",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyDietPreference",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deleteFamilyDietPreference"
+              ],
+              "query": []
+            },
+            "description": "软删除指定家庭饮食偏好。删除后列表默认不返回。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"pref_spicy\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "聚合数据",
       "item": [
         {
@@ -2703,7 +2990,7 @@
                 }
               ]
             },
-            "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems、consumptionRecords。"
+            "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems、consumptionRecords、dietPreferences。"
           },
           "response": []
         }
