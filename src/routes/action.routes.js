@@ -12,6 +12,7 @@ const familyRecipePoolController = require('../controllers/familyRecipePool.cont
 const familyDataController = require('../controllers/familyData.controller');
 const familyConsumptionController = require('../controllers/familyConsumption.controller');
 const familyDietPreferenceController = require('../controllers/familyDietPreference.controller');
+const familySecurityQuestionController = require('../controllers/familySecurityQuestion.controller');
 const { createRateLimiter } = require('../middlewares/rateLimit.middleware');
 
 const router = express.Router();
@@ -33,6 +34,12 @@ const writeLimiter = createRateLimiter({
   windowMs: 60 * 1000,
   max: 120,
   message: '写入请求太频繁，请稍后再试'
+});
+const familyRecoveryLimiter = createRateLimiter({
+  keyPrefix: 'family-recovery',
+  windowMs: 10 * 60 * 1000,
+  max: 5,
+  message: '家庭恢复请求太频繁，请稍后再试'
 });
 
 router.post('/registerDevice', deviceLimiter, deviceController.registerDevice);
@@ -104,6 +111,14 @@ router.post('/updateFamilyDietPreference', writeLimiter, familyDietPreferenceCon
 router.get('/getFamilyDietPreference', familyDietPreferenceController.getPreference);
 router.get('/getFamilyDietPreferences', familyDietPreferenceController.listPreferences);
 router.post('/deleteFamilyDietPreference', writeLimiter, familyDietPreferenceController.deletePreference);
+
+router.post('/setFamilySecurityQuestion', writeLimiter, familySecurityQuestionController.setQuestion);
+router.get('/getFamilySecurityQuestion', familySecurityQuestionController.getQuestion);
+router.post(
+  '/recoverFamilyBySecurityAnswer',
+  familyRecoveryLimiter,
+  familySecurityQuestionController.recoverFamily
+);
 
 router.get('/getFamilyData', familyDataController.getFamilyJsonData);
 

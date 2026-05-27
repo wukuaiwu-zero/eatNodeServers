@@ -224,6 +224,55 @@ async function deleteFamily(familyCode) {
   return toFamily(rows[0]);
 }
 
+async function replaceFamilyCreatorDevice(familyCode, newDeviceId) {
+  const family = await getFamilyByCode(familyCode);
+
+  if (!family) {
+    return null;
+  }
+
+  const oldDeviceId = family.createdByDeviceId;
+
+  if (env.useMockDb) {
+    const row = mockFamilies.get(familyCode);
+    row.created_by_device_id = newDeviceId;
+    row.updated_at = new Date().toISOString();
+    mockFamilies.set(familyCode, row);
+
+    if (oldDeviceId && oldDeviceId !== newDeviceId) {
+      mockFamilyAccess.delete(getAccessKey(oldDeviceId, familyCode));
+    }
+
+    return {
+      oldDeviceId,
+      newDeviceId
+    };
+  }
+
+  await query(
+    `UPDATE families
+     SET created_by_device_id = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE family_code = ? AND is_deleted = 0`,
+    [newDeviceId, familyCode]
+  );
+
+  if (oldDeviceId && oldDeviceId !== newDeviceId) {
+    await query(
+      `UPDATE family_members
+       SET joined_family = 0,
+           revoked_at = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE family_code = ? AND device_id = ? AND revoked_at IS NULL`,
+      [familyCode, oldDeviceId]
+    );
+  }
+
+  return {
+    oldDeviceId,
+    newDeviceId
+  };
+}
+
 async function createFamilyInvite(familyCode, ttlMinutes = 60) {
   const family = await getFamilyByCode(familyCode);
 
@@ -340,6 +389,7 @@ module.exports = {
   getFamilyByCode,
   updateFamily,
   deleteFamily,
+  replaceFamilyCreatorDevice,
   createFamilyInvite,
   consumeFamilyInvite,
   assertDeviceCanAccessFamily,

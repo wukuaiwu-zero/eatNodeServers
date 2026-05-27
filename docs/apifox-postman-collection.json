@@ -599,6 +599,142 @@
       ]
     },
     {
+      "name": "家庭密保与恢复",
+      "item": [
+        {
+          "name": "设置/更新家庭密保问题",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/setFamilySecurityQuestion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "setFamilySecurityQuestion"
+              ],
+              "query": []
+            },
+            "description": "家庭密保用于换设备后恢复家庭访问，不会返回旧 deviceId/deviceSecret。\n推荐步骤：1. 已有家庭管理员调用 setFamilySecurityQuestion 设置问题和答案；2. 新设备先 registerDevice；3. 新设备调用 getFamilySecurityQuestion 展示问题；4. 新设备提交 recoverFamilyBySecurityAnswer；5. 成功后新设备加入家庭并替换家庭创建者设备，旧创建者设备在该家庭的成员关系会被吊销。\n存储说明：question 使用服务端 AES-256-GCM 加密存库，字段为 question_ciphertext/question_iv/question_auth_tag；接口返回时由后端解密后返回 question。answer 不加密、不返回、不明文存库，只存 answer_hash，用 scrypt hash 校验。family_code、failed_count、locked_until、created_by_device_id、updated_by_device_id 不加密。\n安全限制：恢复接口有 10 分钟 5 次接口限流；同一家庭连续答错 5 次会锁定 15 分钟。错误时统一返回“家庭码或密保答案不正确”，避免暴露答案状态。\n\n当前设备必须已经加入该家庭，且需要是家庭管理员。问题会加密存库；答案只存 hash。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"question\": \"我们家的第一道拿手菜是什么？\",\n  \"answer\": \"番茄炒蛋\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询家庭密保问题",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilySecurityQuestion?familyCode={{familyCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilySecurityQuestion"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
+            },
+            "description": "新设备已注册后调用，用于展示密保问题。返回的是后端解密后的 question；不会返回答案或 answer_hash。"
+          },
+          "response": []
+        },
+        {
+          "name": "通过密保答案恢复家庭",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/recoverFamilyBySecurityAnswer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "recoverFamilyBySecurityAnswer"
+              ],
+              "query": []
+            },
+            "description": "家庭密保用于换设备后恢复家庭访问，不会返回旧 deviceId/deviceSecret。\n推荐步骤：1. 已有家庭管理员调用 setFamilySecurityQuestion 设置问题和答案；2. 新设备先 registerDevice；3. 新设备调用 getFamilySecurityQuestion 展示问题；4. 新设备提交 recoverFamilyBySecurityAnswer；5. 成功后新设备加入家庭并替换家庭创建者设备，旧创建者设备在该家庭的成员关系会被吊销。\n存储说明：question 使用服务端 AES-256-GCM 加密存库，字段为 question_ciphertext/question_iv/question_auth_tag；接口返回时由后端解密后返回 question。answer 不加密、不返回、不明文存库，只存 answer_hash，用 scrypt hash 校验。family_code、failed_count、locked_until、created_by_device_id、updated_by_device_id 不加密。\n安全限制：恢复接口有 10 分钟 5 次接口限流；同一家庭连续答错 5 次会锁定 15 分钟。错误时统一返回“家庭码或密保答案不正确”，避免暴露答案状态。\n\n请求头使用新设备的 X-Device-Id/X-Device-Secret。成功后返回新设备 member、familyCodeList、families、homeFamilyCode；不会返回旧设备凭证。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"answer\": \"番茄炒蛋\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "家庭菜谱",
       "item": [
         {

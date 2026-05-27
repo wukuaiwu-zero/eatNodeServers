@@ -719,6 +719,40 @@ async function leaveFamilyByDevice(deviceId, familyCode) {
   };
 }
 
+async function revokeFamilyMemberByDevice(deviceId, familyCode) {
+  const member = await getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    return null;
+  }
+
+  if (env.useMockDb) {
+    const row = mockFamilyMembers.get(getMemberKey(member.familyCode, member.memberCode));
+    row.joined_family = 0;
+    row.revoked_at = new Date().toISOString();
+    row.updated_at = row.revoked_at;
+    mockFamilyMembers.set(getMemberKey(member.familyCode, member.memberCode), row);
+    familyService.revokeDeviceAccessFromFamily(deviceId, familyCode);
+    return toFamilyMember(row);
+  }
+
+  await query(
+    `UPDATE family_members
+     SET joined_family = 0,
+         revoked_at = CURRENT_TIMESTAMP,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE family_code = ? AND device_id = ? AND revoked_at IS NULL`,
+    [familyCode, deviceId]
+  );
+
+  familyService.revokeDeviceAccessFromFamily(deviceId, familyCode);
+  return {
+    ...member,
+    joinedFamily: false,
+    revokedAt: new Date()
+  };
+}
+
 async function saveRecipeIngredients(familyCode, recipeId, ingredients) {
   if (env.useMockDb) {
     mockFamilyRecipeIngredients.set(getRecipeKey(familyCode, recipeId), ingredients);
@@ -1173,6 +1207,7 @@ module.exports = {
   listFamilyMembers,
   updateFamilyMemberProfileByDevice,
   leaveFamilyByDevice,
+  revokeFamilyMemberByDevice,
   upsertFamilyRecipe,
   upsertFamilyRecipeByMember,
   upsertFamilyRecipeByDevice,
