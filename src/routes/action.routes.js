@@ -13,6 +13,7 @@ const familyDataController = require('../controllers/familyData.controller');
 const familyConsumptionController = require('../controllers/familyConsumption.controller');
 const familyDietPreferenceController = require('../controllers/familyDietPreference.controller');
 const familyMemoController = require('../controllers/familyMemo.controller');
+const personalNoteController = require('../controllers/personalNote.controller');
 const familySecurityQuestionController = require('../controllers/familySecurityQuestion.controller');
 const { createRateLimiter } = require('../middlewares/rateLimit.middleware');
 
@@ -118,6 +119,12 @@ router.post('/updateFamilyMemo', writeLimiter, familyMemoController.upsertMemo);
 router.get('/getFamilyMemo', familyMemoController.getMemo);
 router.get('/getFamilyMemos', familyMemoController.listMemos);
 router.post('/deleteFamilyMemo', writeLimiter, familyMemoController.deleteMemo);
+
+router.post('/savePersonalNote', writeLimiter, personalNoteController.upsertNote);
+router.post('/updatePersonalNote', writeLimiter, personalNoteController.upsertNote);
+router.get('/getPersonalNote', personalNoteController.getNote);
+router.get('/getPersonalNotes', personalNoteController.listNotes);
+router.post('/deletePersonalNote', writeLimiter, personalNoteController.deleteNote);
 
 router.post('/setFamilySecurityQuestion', writeLimiter, familySecurityQuestionController.setQuestion);
 router.get('/getFamilySecurityQuestion', familySecurityQuestionController.getQuestion);
