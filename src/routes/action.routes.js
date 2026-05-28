@@ -12,6 +12,7 @@ const familyRecipePoolController = require('../controllers/familyRecipePool.cont
 const familyDataController = require('../controllers/familyData.controller');
 const familyConsumptionController = require('../controllers/familyConsumption.controller');
 const familyDietPreferenceController = require('../controllers/familyDietPreference.controller');
+const familyMemoController = require('../controllers/familyMemo.controller');
 const familySecurityQuestionController = require('../controllers/familySecurityQuestion.controller');
 const { createRateLimiter } = require('../middlewares/rateLimit.middleware');
 
@@ -111,6 +112,12 @@ router.post('/updateFamilyDietPreference', writeLimiter, familyDietPreferenceCon
 router.get('/getFamilyDietPreference', familyDietPreferenceController.getPreference);
 router.get('/getFamilyDietPreferences', familyDietPreferenceController.listPreferences);
 router.post('/deleteFamilyDietPreference', writeLimiter, familyDietPreferenceController.deletePreference);
+
+router.post('/saveFamilyMemo', writeLimiter, familyMemoController.upsertMemo);
+router.post('/updateFamilyMemo', writeLimiter, familyMemoController.upsertMemo);
+router.get('/getFamilyMemo', familyMemoController.getMemo);
+router.get('/getFamilyMemos', familyMemoController.listMemos);
+router.post('/deleteFamilyMemo', writeLimiter, familyMemoController.deleteMemo);
 
 router.post('/setFamilySecurityQuestion', writeLimiter, familySecurityQuestionController.setQuestion);
 router.get('/getFamilySecurityQuestion', familySecurityQuestionController.getQuestion);
