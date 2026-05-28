@@ -75,6 +75,7 @@ async function createFamily(req, res, next) {
       avatarUrl
     });
     const member = await familyRecipeService.bindDeviceToFamily(device.deviceId, data.family.familyCode, 'owner');
+    await familyRecipeService.ensureHomeFamilyForDevice(device.deviceId);
     const invite = await familyService.createFamilyInvite(data.family.familyCode);
     const familySummary = await familyRecipeService.getFamilySummaryByDevice(device.deviceId);
 

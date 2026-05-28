@@ -52,7 +52,7 @@
               ],
               "query": []
             },
-            "description": "首次启动调用。返回 device.deviceId 和 deviceSecret。",
+            "description": "首次启动调用。只注册设备并返回 device.deviceId 和 deviceSecret；不会自动创建默认家庭。后续请显式调用 createFamily、joinFamily 或 recoverFamilyBySecurityAnswer。",
             "body": {
               "mode": "raw",
               "raw": "{}",

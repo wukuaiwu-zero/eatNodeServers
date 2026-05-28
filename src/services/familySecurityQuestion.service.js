@@ -28,6 +28,13 @@ function createForbiddenError(message = '只有家庭管理员可以设置密保
   return error;
 }
 
+function createConfigError(message) {
+  const error = new Error(message);
+  error.statusCode = 500;
+  error.code = 'CONFIG_MISSING';
+  return error;
+}
+
 function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -48,7 +55,7 @@ function getEncryptionSecret() {
     return 'development-security-question-key';
   }
 
-  throw new Error('请配置 SECURITY_QUESTION_ENCRYPTION_KEY');
+  throw createConfigError('请配置 SECURITY_QUESTION_ENCRYPTION_KEY');
 }
 
 function getEncryptionKey() {
@@ -308,6 +315,7 @@ async function recoverFamilyByAnswer(deviceId, familyCode, answer) {
 
   const oldDeviceId = family.createdByDeviceId;
   const member = await familyRecipeService.bindDeviceToFamily(deviceId, familyCode, 'owner');
+  await familyRecipeService.ensureHomeFamilyForDevice(deviceId);
   const replacement = await familyService.replaceFamilyCreatorDevice(familyCode, deviceId);
 
   if (oldDeviceId && oldDeviceId !== deviceId) {

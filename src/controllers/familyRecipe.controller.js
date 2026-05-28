@@ -304,6 +304,7 @@ async function joinFamily(req, res, next) {
     }
 
     const member = await familyRecipeService.joinFamilyByInvite(device.deviceId, inviteCode);
+    await familyRecipeService.ensureHomeFamilyForDevice(device.deviceId);
     const familySummary = await familyRecipeService.getFamilySummaryByDevice(device.deviceId);
     return res.json({
       data: {

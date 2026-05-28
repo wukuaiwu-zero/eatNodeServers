@@ -477,15 +477,10 @@ async function ensureHomeFamilyForDevice(deviceId) {
     return getFamilyMemberByDevice(deviceId, currentMember.familyCode);
   }
 
-  const data = await familyService.createFamilyForDevice(deviceId, '我的厨房');
-  return bindDeviceToFamily(deviceId, data.family.familyCode, 'owner', {
-    relationType: RELATION_TYPE_HOME
-  });
+  return null;
 }
 
 async function getFamilySummaryByDevice(deviceId) {
-  const homeMember = await ensureHomeFamilyForDevice(deviceId);
-
   if (env.useMockDb) {
     const members = Array.from(mockFamilyMembers.values())
       .filter((member) => member.device_id === deviceId && !member.revoked_at)
@@ -500,9 +495,10 @@ async function getFamilySummaryByDevice(deviceId) {
     const families = await Promise.all(
       members.map(async (member) => familyService.getFamilyByCode(member.familyCode))
     );
+    const homeMember = members.find((member) => member.isHomeFamily) || members[0] || null;
 
     return {
-      homeFamilyCode: homeMember.familyCode,
+      homeFamilyCode: homeMember?.familyCode || null,
       familyCodeList: members.map((member) => member.familyCode),
       families: families
         .filter(Boolean)
@@ -560,9 +556,10 @@ async function getFamilySummaryByDevice(deviceId) {
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }));
+  const homeFamily = families.find((family) => family.isHomeFamily) || families[0] || null;
 
   return {
-    homeFamilyCode: homeMember.familyCode,
+    homeFamilyCode: homeFamily?.familyCode || null,
     familyCodeList: families.map((family) => family.familyCode),
     families
   };
