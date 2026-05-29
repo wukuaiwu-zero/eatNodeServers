@@ -16,6 +16,7 @@ const familyMemoController = require('../controllers/familyMemo.controller');
 const personalNoteController = require('../controllers/personalNote.controller');
 const familySecurityQuestionController = require('../controllers/familySecurityQuestion.controller');
 const familyMealController = require('../controllers/familyMeal.controller');
+const familyHealthController = require('../controllers/familyHealth.controller');
 const { createRateLimiter } = require('../middlewares/rateLimit.middleware');
 
 const router = express.Router();
@@ -138,6 +139,13 @@ router.delete('/family/meal/common/remove', writeLimiter, familyMealController.r
 router.get('/family/meal/temp/list', familyMealController.listTemp);
 router.post('/family/meal/temp/add', writeLimiter, familyMealController.addTemp);
 router.delete('/family/meal/temp/remove', writeLimiter, familyMealController.removeTemp);
+
+router.get('/family/health/members', familyHealthController.listMembers);
+router.get('/family/health/member/:memberId', familyHealthController.getMember);
+router.post('/family/health/member/:memberId/weight', writeLimiter, familyHealthController.recordWeight);
+router.put('/family/health/member/:memberId/goal', writeLimiter, familyHealthController.updateGoal);
+router.get('/family/health/member/:memberId/trend', familyHealthController.getTrend);
+router.get('/family/health/member/:memberId/recommendations', familyHealthController.getRecommendations);
 
 router.post('/setFamilySecurityQuestion', writeLimiter, familySecurityQuestionController.setQuestion);
 router.get('/getFamilySecurityQuestion', familySecurityQuestionController.getQuestion);

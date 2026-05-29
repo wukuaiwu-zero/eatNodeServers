@@ -24,6 +24,11 @@
     {
       "key": "inviteCode",
       "value": ""
+    },
+    {
+      "key": "memberId",
+      "value": "{{deviceId}}",
+      "type": "string"
     }
   ],
   "item": [
@@ -3518,6 +3523,294 @@
                 }
               }
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "家庭健康",
+      "item": [
+        {
+          "name": "获取家庭成员健康概览",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/family/health/members?family_code={{familyCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "family",
+                "health",
+                "members"
+              ],
+              "query": [
+                {
+                  "key": "family_code",
+                  "value": "{{familyCode}}"
+                }
+              ]
+            },
+            "description": "获取当前家庭所有成员的健康概览。需要传 family_code 指定家庭；响应包含头像、姓名、BMI、体重、身高、年龄、目标和体重历史。"
+          },
+          "response": []
+        },
+        {
+          "name": "获取单个成员健康详情",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}?family_code={{familyCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "family",
+                "health",
+                "member",
+                "{{memberId}}"
+              ],
+              "query": [
+                {
+                  "key": "family_code",
+                  "value": "{{familyCode}}"
+                }
+              ]
+            },
+            "description": "获取单个成员完整健康详情，包括完整体重历史。memberId 对应 family_members.member_code。"
+          },
+          "response": []
+        },
+        {
+          "name": "记录成员当日体重",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}/weight",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "family",
+                "health",
+                "member",
+                "{{memberId}}",
+                "weight"
+              ],
+              "query": []
+            },
+            "description": "记录成员当日体重，返回更新后的 weight、bmi 和 history。可选 date 用于补录，格式 YYYY-MM-DD；不传则使用服务器当天日期。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_code\": \"{{familyCode}}\",\n  \"weight\": 75.2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "更新成员健康目标",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}/goal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "family",
+                "health",
+                "member",
+                "{{memberId}}",
+                "goal"
+              ],
+              "query": []
+            },
+            "description": "更新健康目标类型和目标体重。可选提交 height/age，用于后续 BMI 和概览展示。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_code\": \"{{familyCode}}\",\n  \"goalType\": \"增肌塑形\",\n  \"targetWeight\": 78,\n  \"height\": 175,\n  \"age\": 35\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "获取成员体重趋势",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}/trend?family_code={{familyCode}}&type=week",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "family",
+                "health",
+                "member",
+                "{{memberId}}",
+                "trend"
+              ],
+              "query": [
+                {
+                  "key": "family_code",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "type",
+                  "value": "week"
+                }
+              ]
+            },
+            "description": "获取体重趋势数据。type 支持 week/month，displayedHistory 顺序与 points 顺序一致。"
+          },
+          "response": []
+        },
+        {
+          "name": "获取成员食谱推荐",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}/recommendations?family_code={{familyCode}}&goalType=健康减脂",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "family",
+                "health",
+                "member",
+                "{{memberId}}",
+                "recommendations"
+              ],
+              "query": [
+                {
+                  "key": "family_code",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "goalType",
+                  "value": "健康减脂"
+                }
+              ]
+            },
+            "description": "根据成员目标返回个性化食谱推荐。goalType 不传时使用成员已保存的目标类型。"
           },
           "response": []
         }
