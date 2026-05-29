@@ -121,7 +121,9 @@ function withRecipeListResponse(data) {
 
 async function uploadFamilyRecipe(req, res, next) {
   try {
-    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const familyCode = normalizeFamilyCode(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_code')
+    );
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
     const familyCodeError = validateFamilyCode(familyCode);
@@ -154,7 +156,9 @@ async function uploadFamilyRecipe(req, res, next) {
 
 async function uploadFamilyRecipeCover(req, res, next) {
   try {
-    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const familyCode = normalizeFamilyCode(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_code')
+    );
     const familyCodeError = validateFamilyCode(familyCode);
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
@@ -185,7 +189,9 @@ async function uploadFamilyRecipeCover(req, res, next) {
 
 async function handleFamilyRecipeItemUpsert(req, res, next, mode) {
   try {
-    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const familyCode = normalizeFamilyCode(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_code')
+    );
     const recipeItem = req.body.recipeItemJson || req.body.recipeJson || req.body.recipe;
     const familyCodeError = validateFamilyCode(familyCode);
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
@@ -233,7 +239,9 @@ async function updateFamilyRecipeItem(req, res, next) {
 
 async function getFamilyRecipeItem(req, res, next) {
   try {
-    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const familyCode = normalizeFamilyCode(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_code')
+    );
     const recipeId = normalizeFamilyCode(
       getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'recipeId')
     );
@@ -264,7 +272,9 @@ async function getFamilyRecipeItem(req, res, next) {
 
 async function deleteFamilyRecipeItem(req, res, next) {
   try {
-    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const familyCode = normalizeFamilyCode(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_code')
+    );
     const recipeId = normalizeFamilyCode(
       getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'recipeId')
     );
@@ -320,10 +330,18 @@ async function joinFamily(req, res, next) {
 
 async function getFamilyRecipeByMember(req, res, next) {
   try {
+    const familyCode = normalizeFamilyCode(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_code')
+    );
+    const familyCodeError = familyCode ? validateFamilyCode(familyCode) : null;
     const { deviceId, deviceSecret } = getDeviceCredentials(req);
     const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
 
-    const data = await familyRecipeService.getFamilyRecipeByDevice(device.deviceId);
+    if (familyCodeError) {
+      return res.status(400).json({ message: familyCodeError });
+    }
+
+    const data = await familyRecipeService.getFamilyRecipeByDevice(device.deviceId, familyCode || null);
 
     if (!data) {
       return res.status(404).json({ message: '家庭成员不存在' });
@@ -337,7 +355,9 @@ async function getFamilyRecipeByMember(req, res, next) {
 
 async function getFamilyRecipe(req, res, next) {
   try {
-    const familyCode = normalizeFamilyCode(getInput(req, 'familyCode') || getInput(req, 'familycode'));
+    const familyCode = normalizeFamilyCode(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_code')
+    );
     const familyCodeError = validateFamilyCode(familyCode);
 
     if (familyCodeError) {

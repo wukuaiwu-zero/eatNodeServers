@@ -1008,7 +1008,7 @@
           "response": []
         },
         {
-          "name": "查询当前设备家庭菜谱",
+          "name": "按当前设备查询家庭菜谱",
           "request": {
             "method": "GET",
             "header": [
@@ -1024,7 +1024,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/getFamilyRecipeByMember?page=1&pageSize=20",
+              "raw": "{{baseUrl}}/api/getFamilyRecipeByMember?familyCode={{familyCode}}&page=1&pageSize=20",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1033,6 +1033,10 @@
                 "getFamilyRecipeByMember"
               ],
               "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
                 {
                   "key": "page",
                   "value": "1"
@@ -1043,7 +1047,7 @@
                 }
               ]
             },
-            "description": "根据当前设备默认家庭查询菜谱列表。返回 member、familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。设备加入多个家庭时，此接口优先取 home 家庭。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
+            "description": "根据当前设备查询指定家庭菜谱列表。建议传 familyCode；传入后会校验当前设备是否已加入该家庭，未加入会返回 404。未传 familyCode 时保留旧行为：优先取当前设备 home 家庭。支持可选分页参数 page/pageSize。"
           },
           "response": []
         },

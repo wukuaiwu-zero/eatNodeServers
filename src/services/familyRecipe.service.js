@@ -1177,8 +1177,8 @@ async function getFamilyRecipeByMember(memberCode) {
   };
 }
 
-async function getFamilyRecipeByDevice(deviceId) {
-  const member = await getFamilyMemberByDevice(deviceId);
+async function getFamilyRecipeByDevice(deviceId, familyCode = null) {
+  const member = await getFamilyMemberByDevice(deviceId, familyCode);
 
   if (!member) {
     return null;
