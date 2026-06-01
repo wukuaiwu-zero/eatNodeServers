@@ -3,6 +3,10 @@ const { env } = require('../config/env');
 const familyRecipeService = require('./familyRecipe.service');
 
 const TABLE_NAME = 'family_recipe_pool_items';
+const DISH_TYPE_TAKEOUT = '外卖';
+const DISH_TYPE_DINE_IN = '堂食';
+const DISH_TYPE_COOK = '做饭';
+const DISH_TYPES = new Set([DISH_TYPE_TAKEOUT, DISH_TYPE_DINE_IN, DISH_TYPE_COOK]);
 const DEFAULT_DISHES = [
   '番茄炒蛋',
   '可乐鸡翅',
@@ -50,6 +54,25 @@ function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function normalizeDishType(value) {
+  const type = normalizeText(value);
+
+  if (!type) {
+    return '';
+  }
+
+  if (!DISH_TYPES.has(type)) {
+    throw new TypeError('菜品类型只能是外卖、堂食、做饭');
+  }
+
+  return type;
+}
+
+function getStoredDishType(value) {
+  const type = normalizeText(value);
+  return DISH_TYPES.has(type) ? type : DISH_TYPE_COOK;
+}
+
 function normalizeDish(dishJson) {
   if (dishJson === undefined || dishJson === null) {
     throw new TypeError('请填写菜品数据');
@@ -70,7 +93,7 @@ function normalizeDish(dishJson) {
   return {
     dishId: normalizeText(dish.id || dish._id || dish.dishId) || createDishId(name),
     name,
-    type: normalizeText(dish.type)
+    type: normalizeDishType(dish.type)
   };
 }
 
@@ -109,7 +132,7 @@ async function ensureDefaultDishes(familyCode) {
           dish_id: dishId,
           family_code: familyCode,
           name,
-          type: 'default',
+          type: DISH_TYPE_COOK,
           is_default: 1,
           created_by: 'system',
           updated_by: 'system',
@@ -127,10 +150,10 @@ async function ensureDefaultDishes(familyCode) {
     await query(
       `INSERT INTO ${TABLE_NAME}
          (dish_id, family_code, name, type, is_default, created_by, updated_by, version)
-       VALUES (?, ?, ?, 'default', 1, 'system', 'system', 1)
+       VALUES (?, ?, ?, ?, 1, 'system', 'system', 1)
        ON DUPLICATE KEY UPDATE
          updated_at = updated_at`,
-      [createDishId(name, index), familyCode, name]
+      [createDishId(name, index), familyCode, name, DISH_TYPE_COOK]
     );
   }
 }
@@ -178,7 +201,7 @@ async function upsertDish(familyCode, memberCode, dishJson) {
       dish_id: normalized.dishId,
       family_code: familyCode,
       name: normalized.name,
-      type: normalized.type || current?.type || 'manual',
+      type: normalized.type || getStoredDishType(current?.type),
       is_default: current?.is_default || 0,
       created_by: current?.created_by || memberCode,
       updated_by: memberCode,
@@ -207,7 +230,7 @@ async function upsertDish(familyCode, memberCode, dishJson) {
       normalized.dishId,
       familyCode,
       normalized.name,
-      normalized.type || 'manual',
+      normalized.type || DISH_TYPE_COOK,
       memberCode,
       memberCode,
       normalized.type ? 1 : 0

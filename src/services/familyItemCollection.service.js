@@ -409,7 +409,7 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
         .filter((row) => row.family_code === familyCode)
         .filter((row) => includeDeleted || !row.deleted_at)
         .filter((row) => !categoryId || row.category_id === categoryId)
-        .sort((a, b) => (a.create_time || 0) - (b.create_time || 0))
+        .sort((a, b) => (b.create_time || 0) - (a.create_time || 0) || b.id - a.id)
         .map((row) => toItem(row, itemType, categoryNameMap.get(row.category_id)));
     }
 
@@ -431,7 +431,7 @@ function createFamilyItemCollectionService({ tableName, itemType }) {
        FROM ${tableName} i
        LEFT JOIN ${categoryTable} c ON i.family_code = c.family_code AND i.category_id = c.category_id AND c.deleted_at IS NULL
        WHERE ${filters.join(' AND ')}
-       ORDER BY i.create_time ASC, i.id ASC`,
+       ORDER BY i.create_time DESC, i.id DESC`,
       params
     );
 

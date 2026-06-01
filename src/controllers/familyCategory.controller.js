@@ -83,6 +83,36 @@ function createFamilyCategoryController(service, categoryFieldName) {
     }
   }
 
+  async function sortCategories(req, res, next) {
+    try {
+      const familyCode = normalizeText(
+        getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+      );
+      const categoryIds = req.body.categoryIds || req.body.ids;
+      const familyCodeError = validateText(familyCode, '家庭码', FAMILY_CODE_MAX_LENGTH);
+      const { deviceId, deviceSecret } = getDeviceCredentials(req);
+      const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+      if (familyCodeError) {
+        return res.status(400).json({ message: familyCodeError });
+      }
+
+      const data = await service.sortCategoriesByDevice(device.deviceId, familyCode, categoryIds);
+
+      if (!data) {
+        return res.status(403).json({ message: '当前设备还没有加入这个家庭' });
+      }
+
+      return res.json({ data });
+    } catch (error) {
+      if (error instanceof TypeError) {
+        return res.status(400).json({ message: error.message });
+      }
+
+      return next(error);
+    }
+  }
+
   async function deleteCategory(req, res, next) {
     try {
       const familyCode = normalizeText(
@@ -114,6 +144,7 @@ function createFamilyCategoryController(service, categoryFieldName) {
   return {
     upsertCategory,
     listCategories,
+    sortCategories,
     deleteCategory
   };
 }

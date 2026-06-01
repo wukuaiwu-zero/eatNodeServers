@@ -1123,7 +1123,7 @@ async function getFamilyRecipeByCode(familyCode) {
   if (env.useMockDb) {
     const recipes = Array.from(mockFamilyRecipes.values())
       .filter((row) => row.family_code === familyCode && !row.deleted_at)
-      .sort((a, b) => a.id - b.id)
+      .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at) || b.id - a.id)
       .map((row) => toRecipeItem(
         row,
         mockFamilyRecipeIngredients.get(getRecipeKey(familyCode, row.recipe_id)) || []
@@ -1136,7 +1136,7 @@ async function getFamilyRecipeByCode(familyCode) {
     `SELECT id, family_code, recipe_id, name, category, cover_url, difficulty, duration, favorite, own, steps_json, version, deleted_at, created_at, updated_at
      FROM family_recipes
      WHERE family_code = ? AND deleted_at IS NULL
-     ORDER BY id ASC`,
+     ORDER BY updated_at DESC, id DESC`,
     [familyCode]
   );
 

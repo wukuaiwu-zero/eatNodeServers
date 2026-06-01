@@ -90,14 +90,17 @@ router.post('/saveFamilyCategory', writeLimiter, familyCategorySyncController.sa
 
 router.post('/saveFamilyShoppingCategory', writeLimiter, familyShoppingCategoryController.upsertCategory);
 router.get('/getFamilyShoppingCategories', familyShoppingCategoryController.listCategories);
+router.post('/sortFamilyShoppingCategories', writeLimiter, familyShoppingCategoryController.sortCategories);
 router.post('/deleteFamilyShoppingCategory', writeLimiter, familyShoppingCategoryController.deleteCategory);
 
 router.post('/saveFamilyIngredientCategory', writeLimiter, familyIngredientCategoryController.upsertCategory);
 router.get('/getFamilyIngredientCategories', familyIngredientCategoryController.listCategories);
+router.post('/sortFamilyIngredientCategories', writeLimiter, familyIngredientCategoryController.sortCategories);
 router.post('/deleteFamilyIngredientCategory', writeLimiter, familyIngredientCategoryController.deleteCategory);
 
 router.post('/saveFamilyRecipeCategory', writeLimiter, familyRecipeCategoryController.upsertCategory);
 router.get('/getFamilyRecipeCategories', familyRecipeCategoryController.listCategories);
+router.post('/sortFamilyRecipeCategories', writeLimiter, familyRecipeCategoryController.sortCategories);
 router.post('/deleteFamilyRecipeCategory', writeLimiter, familyRecipeCategoryController.deleteCategory);
 
 router.post('/saveFamilyRecipePoolItem', writeLimiter, familyRecipePoolController.upsertDish);

@@ -1,4 +1,4 @@
-const { query } = require('../config/db');
+const { pool, query } = require('../config/db');
 const { env } = require('../config/env');
 const familyRecipeService = require('./familyRecipe.service');
 
@@ -29,6 +29,24 @@ function normalizeFamilyCode(familyCode) {
 function normalizeSortOrder(sortOrder) {
   const value = Number(sortOrder);
   return Number.isFinite(value) ? Math.trunc(value) : 0;
+}
+
+function normalizeCategoryIds(categoryIds) {
+  if (!Array.isArray(categoryIds) || categoryIds.length === 0) {
+    throw new TypeError('请填写完整的类别 ID 排序列表');
+  }
+
+  const normalized = categoryIds.map((categoryId) => normalizeName(String(categoryId)));
+
+  if (normalized.some((categoryId) => !categoryId)) {
+    throw new TypeError('类别 ID 不能为空');
+  }
+
+  if (new Set(normalized).size !== normalized.length) {
+    throw new TypeError('类别 ID 不能重复');
+  }
+
+  return normalized;
 }
 
 function normalizeCategory(categoryJson, idPrefix) {
@@ -118,7 +136,6 @@ function createFamilyCategoryService({ tableName, idPrefix, defaultCategories })
          VALUES (?, ?, ?, ?, 1, 'system', 'system', 1)
          ON DUPLICATE KEY UPDATE
            name = VALUES(name),
-           sort_order = VALUES(sort_order),
            is_default = 1,
            updated_at = CURRENT_TIMESTAMP`,
         [category.id, familyCode, category.name, category.sortOrder]
@@ -287,6 +304,90 @@ function createFamilyCategoryService({ tableName, idPrefix, defaultCategories })
     };
   }
 
+  async function sortCategoriesByFamily(familyCode, memberCode, categoryIds) {
+    await ensureDefaultCategories(familyCode);
+    const normalizedIds = normalizeCategoryIds(categoryIds);
+
+    if (env.useMockDb) {
+      const activeCategories = Array.from(mockCategories.values())
+        .filter((row) => row.family_code === familyCode && !row.deleted_at);
+      const activeCategoryIds = new Set(activeCategories.map((row) => row.category_id));
+
+      if (normalizedIds.length !== activeCategories.length
+        || normalizedIds.some((categoryId) => !activeCategoryIds.has(categoryId))) {
+        throw new TypeError('类别排序列表必须包含当前全部类别');
+      }
+
+      const now = new Date().toISOString();
+      normalizedIds.forEach((categoryId, index) => {
+        const key = getMockKey(familyCode, categoryId);
+        const row = mockCategories.get(key);
+        row.sort_order = (index + 1) * 10;
+        row.updated_by = memberCode;
+        row.version += 1;
+        row.updated_at = now;
+        mockCategories.set(key, row);
+      });
+
+      return listCategoriesByFamily(familyCode);
+    }
+
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+      const [rows] = await connection.execute(
+        `SELECT category_id
+         FROM ${tableName}
+         WHERE family_code = ? AND deleted_at IS NULL
+         FOR UPDATE`,
+        [familyCode]
+      );
+      const activeCategoryIds = new Set(rows.map((row) => row.category_id));
+
+      if (normalizedIds.length !== rows.length
+        || normalizedIds.some((categoryId) => !activeCategoryIds.has(categoryId))) {
+        throw new TypeError('类别排序列表必须包含当前全部类别');
+      }
+
+      for (const [index, categoryId] of normalizedIds.entries()) {
+        await connection.execute(
+          `UPDATE ${tableName}
+           SET sort_order = ?,
+               updated_by = ?,
+               version = version + 1,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE family_code = ? AND category_id = ? AND deleted_at IS NULL`,
+          [(index + 1) * 10, memberCode, familyCode, categoryId]
+        );
+      }
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+    return listCategoriesByFamily(familyCode);
+  }
+
+  async function sortCategoriesByDevice(deviceId, familyCode, categoryIds) {
+    const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode);
+
+    if (!member) {
+      return null;
+    }
+
+    const categories = await sortCategoriesByFamily(member.familyCode, member.memberCode, categoryIds);
+
+    return {
+      member,
+      categories
+    };
+  }
+
   async function deleteCategoryByFamily(familyCode, categoryId, memberCode) {
     await ensureDefaultCategories(familyCode);
     const category = await getCategoryByFamily(familyCode, categoryId);
@@ -347,6 +448,7 @@ function createFamilyCategoryService({ tableName, idPrefix, defaultCategories })
     getCategoryByFamily,
     listCategoriesByFamily,
     listCategoriesByDevice,
+    sortCategoriesByDevice,
     deleteCategoryByDevice
   };
 }

@@ -1985,6 +1985,51 @@
           "response": []
         },
         {
+          "name": "批量排序购物分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sortFamilyShoppingCategories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sortFamilyShoppingCategories"
+              ],
+              "query": []
+            },
+            "description": "拖动结束后提交当前家庭完整分类 ID 顺序。类别不能缺失或重复，后端会按数组顺序重算 sortOrder 并返回最新列表。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"categoryIds\": [\n    \"shopping_cat_vegetable\",\n    \"shopping_cat_staple\",\n    \"shopping_cat_meat\",\n    \"shopping_cat_egg_dairy\",\n    \"shopping_cat_seasoning\",\n    \"shopping_cat_other\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
           "name": "查询购物分类",
           "request": {
             "method": "GET",
@@ -2123,6 +2168,51 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ingredientCategoryJson\": {\n    \"name\": \"干货\",\n    \"sortOrder\": 70\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "批量排序食材分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sortFamilyIngredientCategories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sortFamilyIngredientCategories"
+              ],
+              "query": []
+            },
+            "description": "拖动结束后提交当前家庭完整分类 ID 顺序。类别不能缺失或重复，后端会按数组顺序重算 sortOrder 并返回最新列表。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"categoryIds\": [\n    \"ingredient_cat_vegetable\",\n    \"ingredient_cat_staple\",\n    \"ingredient_cat_meat\",\n    \"ingredient_cat_egg_dairy\",\n    \"ingredient_cat_seasoning\",\n    \"ingredient_cat_other\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2281,6 +2371,51 @@
           "response": []
         },
         {
+          "name": "批量排序菜品分类",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sortFamilyRecipeCategories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sortFamilyRecipeCategories"
+              ],
+              "query": []
+            },
+            "description": "拖动结束后提交当前家庭完整分类 ID 顺序。类别不能缺失或重复，后端会按数组顺序重算 sortOrder 并返回最新列表。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"categoryIds\": [\n    \"recipe_cat_breakfast\",\n    \"recipe_cat_home\",\n    \"recipe_cat_cold\",\n    \"recipe_cat_soup\",\n    \"recipe_cat_staple\",\n    \"recipe_cat_other\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
           "name": "查询菜品分类",
           "request": {
             "method": "GET",
@@ -2406,10 +2541,10 @@
               ],
               "query": []
             },
-            "description": "同一家庭下未删除菜名不能重复。type 可用 default/manual/takeout/dine_in/recipe_sync 等。",
+            "description": "同一家庭下未删除菜名不能重复。type 枚举：外卖、堂食、做饭；不传默认做饭。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dishJson\": {\n    \"name\": \"宫保鸡丁\",\n    \"type\": \"manual\"\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dishJson\": {\n    \"name\": \"宫保鸡丁\",\n    \"type\": \"做饭\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"

@@ -93,6 +93,19 @@ async function hasColumn(connection, tableName, columnName) {
   return Boolean(rows[0]);
 }
 
+async function hasTable(connection, tableName) {
+  const [rows] = await connection.execute(
+    `SELECT 1
+     FROM INFORMATION_SCHEMA.TABLES
+     WHERE TABLE_SCHEMA = DATABASE()
+       AND TABLE_NAME = ?
+     LIMIT 1`,
+    [tableName]
+  );
+
+  return Boolean(rows[0]);
+}
+
 async function hasIndex(connection, tableName, indexName) {
   const [rows] = await connection.execute(
     `SELECT 1
@@ -276,6 +289,30 @@ async function migrateMembers(connection) {
   }
 }
 
+async function migrateRecipePoolTypes(connection) {
+  if (!(await hasTable(connection, 'family_recipe_pool_items'))) {
+    console.log('family_recipe_pool_items does not exist; skipped recipe pool type migration.');
+    return;
+  }
+
+  if (!(await hasColumn(connection, 'family_recipe_pool_items', 'type'))) {
+    await connection.execute(
+      `ALTER TABLE family_recipe_pool_items
+       ADD COLUMN type VARCHAR(20) NOT NULL DEFAULT '做饭' AFTER name`
+    );
+  }
+
+  await connection.execute(
+    `UPDATE family_recipe_pool_items
+     SET type = CASE
+       WHEN type IN ('外卖', 'takeout') THEN '外卖'
+       WHEN type IN ('堂食', 'dine_in') THEN '堂食'
+       ELSE '做饭'
+     END
+     WHERE type IS NULL OR type = '' OR type NOT IN ('外卖', '堂食', '做饭')`
+  );
+}
+
 async function main() {
   const connection = await mysql.createConnection({
     host: env.db.host,
@@ -289,6 +326,7 @@ async function main() {
   try {
     await migrateRecipes(connection);
     await migrateMembers(connection);
+    await migrateRecipePoolTypes(connection);
   } finally {
     await connection.end();
   }
