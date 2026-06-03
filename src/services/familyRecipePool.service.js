@@ -158,13 +158,23 @@ async function ensureDefaultDishes(familyCode) {
   }
 }
 
-async function assertUniqueName(familyCode, dishId, name) {
+async function getEffectiveDishType(familyCode, dishId, inputType) {
+  if (inputType) {
+    return inputType;
+  }
+
+  const current = await getDishByFamily(familyCode, dishId);
+  return getStoredDishType(current?.type);
+}
+
+async function assertUniqueName(familyCode, dishId, name, type) {
   if (env.useMockDb) {
     const duplicated = Array.from(mockItems.values()).find((row) => {
       return row.family_code === familyCode
         && !row.deleted_at
         && row.dish_id !== dishId
-        && row.name === name;
+        && row.name === name
+        && getStoredDishType(row.type) === type;
     });
 
     if (duplicated) {
@@ -177,9 +187,9 @@ async function assertUniqueName(familyCode, dishId, name) {
   const rows = await query(
     `SELECT dish_id
      FROM ${TABLE_NAME}
-     WHERE family_code = ? AND name = ? AND deleted_at IS NULL AND dish_id <> ?
+     WHERE family_code = ? AND name = ? AND type = ? AND deleted_at IS NULL AND dish_id <> ?
      LIMIT 1`,
-    [familyCode, name, dishId]
+    [familyCode, name, type, dishId]
   );
 
   if (rows[0]) {
@@ -190,7 +200,8 @@ async function assertUniqueName(familyCode, dishId, name) {
 async function upsertDish(familyCode, memberCode, dishJson) {
   await ensureDefaultDishes(familyCode);
   const normalized = normalizeDish(dishJson);
-  await assertUniqueName(familyCode, normalized.dishId, normalized.name);
+  const effectiveType = await getEffectiveDishType(familyCode, normalized.dishId, normalized.type);
+  await assertUniqueName(familyCode, normalized.dishId, normalized.name, effectiveType);
 
   if (env.useMockDb) {
     const now = new Date().toISOString();
@@ -201,7 +212,7 @@ async function upsertDish(familyCode, memberCode, dishJson) {
       dish_id: normalized.dishId,
       family_code: familyCode,
       name: normalized.name,
-      type: normalized.type || getStoredDishType(current?.type),
+      type: effectiveType,
       is_default: current?.is_default || 0,
       created_by: current?.created_by || memberCode,
       updated_by: memberCode,
@@ -230,7 +241,7 @@ async function upsertDish(familyCode, memberCode, dishJson) {
       normalized.dishId,
       familyCode,
       normalized.name,
-      normalized.type || DISH_TYPE_COOK,
+      effectiveType,
       memberCode,
       memberCode,
       normalized.type ? 1 : 0

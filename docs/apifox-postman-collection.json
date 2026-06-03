@@ -2541,7 +2541,7 @@
               ],
               "query": []
             },
-            "description": "同一家庭下未删除菜名不能重复。type 枚举：外卖、堂食、做饭；不传默认做饭。",
+            "description": "同一家庭下未删除菜品按 name + type 判重：不同 type 可同名，同 type 不能重复。type 枚举：外卖、堂食、做饭；不传默认做饭。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dishJson\": {\n    \"name\": \"宫保鸡丁\",\n    \"type\": \"做饭\"\n  }\n}",
