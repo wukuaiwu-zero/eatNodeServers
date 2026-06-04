@@ -6,6 +6,7 @@ const deviceService = require('./device.service');
 const mockFamilies = new Map();
 const mockInvites = new Map();
 const mockFamilyAccess = new Set();
+const DEFAULT_INVITE_TTL_MINUTES = 5;
 
 function createConflictError(message) {
   const error = new Error(message);
@@ -273,7 +274,7 @@ async function replaceFamilyCreatorDevice(familyCode, newDeviceId) {
   };
 }
 
-async function createFamilyInvite(familyCode, ttlMinutes = 60) {
+async function createFamilyInvite(familyCode, ttlMinutes = DEFAULT_INVITE_TTL_MINUTES) {
   const family = await getFamilyByCode(familyCode);
 
   if (!family) {

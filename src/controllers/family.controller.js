@@ -8,6 +8,7 @@ const FAMILY_CODE_MAX_LENGTH = 100;
 const FAMILY_NAME_MAX_LENGTH = 100;
 const MEMBER_TEXT_MAX_LENGTH = 100;
 const AVATAR_URL_MAX_LENGTH = 255;
+const DEFAULT_INVITE_TTL_MINUTES = 5;
 
 function normalizeText(value) {
   return typeof value === 'string' ? value.trim() : '';
@@ -301,7 +302,7 @@ async function leaveFamily(req, res, next) {
 async function createFamilyInvite(req, res, next) {
   try {
     const familyCode = normalizeText(getInput(req, 'familyCode') || getInput(req, 'familycode'));
-    const ttlMinutes = Number(req.body.ttlMinutes || req.query.ttlMinutes || 60);
+    const ttlMinutes = Number(req.body.ttlMinutes || req.query.ttlMinutes || DEFAULT_INVITE_TTL_MINUTES);
     const familyCodeError = validateFamilyCode(familyCode);
 
     if (familyCodeError) {
@@ -314,7 +315,7 @@ async function createFamilyInvite(req, res, next) {
 
     const invite = await familyService.createFamilyInvite(
       familyCode,
-      Number.isFinite(ttlMinutes) ? ttlMinutes : 60
+      Number.isFinite(ttlMinutes) ? ttlMinutes : DEFAULT_INVITE_TTL_MINUTES
     );
 
     return res.status(201).json({ data: invite });

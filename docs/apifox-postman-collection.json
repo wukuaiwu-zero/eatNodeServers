@@ -488,7 +488,7 @@
             "description": "",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ttlMinutes\": 60\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"ttlMinutes\": 5\n}",
               "options": {
                 "raw": {
                   "language": "json"
