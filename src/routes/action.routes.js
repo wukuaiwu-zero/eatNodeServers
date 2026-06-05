@@ -134,6 +134,8 @@ router.post('/deletePersonalNote', writeLimiter, personalNoteController.deleteNo
 router.get('/family/meal/plan', familyMealController.getPlan);
 router.post('/family/meal/plan/save', writeLimiter, familyMealController.savePlan);
 router.put('/family/meal/plan/status', writeLimiter, familyMealController.updatePlanStatus);
+router.get('/family/meal/diary', familyMealController.getDiary);
+router.post('/family/meal/photo/upload', writeLimiter, familyMealController.uploadDietPhoto);
 
 router.get('/family/meal/common/list', familyMealController.listCommon);
 router.post('/family/meal/common/add', writeLimiter, familyMealController.addCommon);
