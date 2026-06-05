@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const familyRecipeService = require('../services/familyRecipe.service');
 const familyService = require('../services/family.service');
 const deviceService = require('../services/device.service');
@@ -10,6 +11,8 @@ const { paginateDataList } = require('../utils/pagination');
 const FAMILY_CODE_MAX_LENGTH = 100;
 const RECIPE_ID_MAX_LENGTH = 100;
 const MAX_COVER_IMAGE_BYTES = 4 * 1024 * 1024;
+const THUMBNAIL_WIDTH = 320;
+const THUMBNAIL_QUALITY = 65;
 const COVER_UPLOAD_DIR = path.join(__dirname, '../../public/uploads/recipe-covers');
 const IMAGE_TYPES = {
   'image/jpeg': 'jpg',
@@ -82,15 +85,27 @@ function normalizeImageInput(req) {
   };
 }
 
-function saveCoverImage(familyCode, image) {
+async function saveCoverImage(familyCode, image) {
   const familyDir = path.join(COVER_UPLOAD_DIR, familyCode);
   fs.mkdirSync(familyDir, { recursive: true });
 
-  const filename = `${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}.${image.ext}`;
+  const fileStem = `${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`;
+  const filename = `${fileStem}.${image.ext}`;
+  const thumbnailFilename = `${fileStem}_thumb.webp`;
   const filePath = path.join(familyDir, filename);
+  const thumbnailPath = path.join(familyDir, thumbnailFilename);
   fs.writeFileSync(filePath, image.buffer);
 
-  return `/uploads/recipe-covers/${familyCode}/${filename}`;
+  await sharp(image.buffer)
+    .rotate()
+    .resize({ width: THUMBNAIL_WIDTH, withoutEnlargement: true })
+    .webp({ quality: THUMBNAIL_QUALITY })
+    .toFile(thumbnailPath);
+
+  return {
+    coverUrl: `/uploads/recipe-covers/${familyCode}/${filename}`,
+    thumbnailUrl: `/uploads/recipe-covers/${familyCode}/${thumbnailFilename}`
+  };
 }
 
 function toRecipeListResponse(recipe, fallbackFamilyCode = '') {
@@ -141,7 +156,8 @@ async function uploadFamilyRecipe(req, res, next) {
       familyCode,
       req.body.recipeJson,
       {
-        coverUrl: getInput(req, 'coverUrl') || getInput(req, 'cover_url')
+        coverUrl: getInput(req, 'coverUrl') || getInput(req, 'cover_url'),
+        thumbnailUrl: getInput(req, 'thumbnailUrl') || getInput(req, 'thumbnail_url')
       }
     );
     return res.json({ data: withRecipeListResponse(data) });
@@ -170,12 +186,12 @@ async function uploadFamilyRecipeCover(req, res, next) {
     await familyService.assertDeviceCanAccessFamily(device.deviceId, familyCode);
 
     const image = normalizeImageInput(req);
-    const coverUrl = saveCoverImage(familyCode, image);
+    const imageUrls = await saveCoverImage(familyCode, image);
 
     return res.json({
       data: {
         familyCode,
-        coverUrl
+        ...imageUrls
       }
     });
   } catch (error) {
@@ -211,6 +227,7 @@ async function handleFamilyRecipeItemUpsert(req, res, next, mode) {
       recipeItem,
       {
         coverUrl: getInput(req, 'coverUrl') || getInput(req, 'cover_url'),
+        thumbnailUrl: getInput(req, 'thumbnailUrl') || getInput(req, 'thumbnail_url'),
         mode
       }
     );
