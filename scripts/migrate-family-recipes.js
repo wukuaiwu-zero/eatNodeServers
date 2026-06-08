@@ -55,7 +55,6 @@ function normalizeRecipe(row, recipe, index) {
     name: text(recipe.name) || `未命名菜谱${index + 1}`,
     category: text(recipe.category) || null,
     coverUrl: text(recipe.coverUrl || recipe.cover) || row.cover_url || null,
-    thumbnailUrl: text(recipe.thumbnailUrl || recipe.thumbnail || recipe.thumbUrl) || row.thumbnail_url || row.cover_url || null,
     difficulty: text(recipe.difficulty) || null,
     duration: text(recipe.duration) || null,
     favorite: bool(recipe.favorite, false),
@@ -121,19 +120,6 @@ async function hasIndex(connection, tableName, indexName) {
   return Boolean(rows[0]);
 }
 
-async function ensureRecipeThumbnailColumn(connection) {
-  const recipeTableExists = await hasTable(connection, 'family_recipes');
-  if (!recipeTableExists) {
-    return;
-  }
-
-  const thumbnailColumnExists = await hasColumn(connection, 'family_recipes', 'thumbnail_url');
-  if (!thumbnailColumnExists) {
-    await connection.execute('ALTER TABLE family_recipes ADD COLUMN thumbnail_url VARCHAR(255) DEFAULT NULL AFTER cover_url');
-    console.log('Added family_recipes.thumbnail_url.');
-  }
-}
-
 async function createRecipeTables(connection) {
   await connection.execute(
     `CREATE TABLE IF NOT EXISTS family_recipes_new (
@@ -143,7 +129,6 @@ async function createRecipeTables(connection) {
       name VARCHAR(100) NOT NULL,
       category VARCHAR(100) DEFAULT NULL,
       cover_url VARCHAR(255) DEFAULT NULL,
-      thumbnail_url VARCHAR(255) DEFAULT NULL,
       difficulty VARCHAR(50) DEFAULT NULL,
       duration VARCHAR(50) DEFAULT NULL,
       favorite TINYINT(1) NOT NULL DEFAULT 0,
@@ -185,7 +170,6 @@ async function migrateRecipes(connection) {
   const oldJsonExists = await hasColumn(connection, 'family_recipes', 'recipe_json');
 
   if (!oldJsonExists) {
-    await ensureRecipeThumbnailColumn(connection);
     console.log('family_recipes is already field-based; skipped recipe migration.');
     return;
   }
@@ -194,7 +178,7 @@ async function migrateRecipes(connection) {
   await createRecipeTables(connection);
 
   const [rows] = await connection.execute(
-    `SELECT id, family_code, recipe_json, cover_url, NULL AS thumbnail_url, created_at, updated_at
+    `SELECT id, family_code, recipe_json, cover_url, created_at, updated_at
      FROM family_recipes
      ORDER BY id ASC`
   );
@@ -212,13 +196,12 @@ async function migrateRecipes(connection) {
       const normalized = normalizeRecipe(row, recipe, index);
       await connection.execute(
         `INSERT INTO family_recipes_new
-          (family_code, recipe_id, name, category, cover_url, thumbnail_url, difficulty, duration, favorite, own, steps_json, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (family_code, recipe_id, name, category, cover_url, difficulty, duration, favorite, own, steps_json, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON DUPLICATE KEY UPDATE
            name = VALUES(name),
            category = VALUES(category),
            cover_url = VALUES(cover_url),
-           thumbnail_url = VALUES(thumbnail_url),
            difficulty = VALUES(difficulty),
            duration = VALUES(duration),
            favorite = VALUES(favorite),
@@ -231,7 +214,6 @@ async function migrateRecipes(connection) {
           normalized.name,
           normalized.category,
           normalized.coverUrl,
-          normalized.thumbnailUrl,
           normalized.difficulty,
           normalized.duration,
           normalized.favorite ? 1 : 0,

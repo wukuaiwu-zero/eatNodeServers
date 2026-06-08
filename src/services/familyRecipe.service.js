@@ -8,8 +8,7 @@ const mockFamilyMembers = new Map();
 
 const RELATION_TYPE_HOME = 'home';
 const RELATION_TYPE_JOINED = 'joined';
-const FAMILY_RECIPE_COLUMNS = 'id, family_code, recipe_id, name, category, cover_url, thumbnail_url, difficulty, duration, favorite, own, steps_json, version, deleted_at, created_at, updated_at';
-let thumbnailColumnReadyPromise = null;
+const FAMILY_RECIPE_COLUMNS = 'id, family_code, recipe_id, name, category, cover_url, difficulty, duration, favorite, own, steps_json, version, deleted_at, created_at, updated_at';
 
 function getMemberKey(familyCode, memberCode) {
   return `${familyCode}:${memberCode}`;
@@ -45,44 +44,6 @@ function parseRecipeJsonSafely(recipeJson) {
 
 function normalizeCoverUrl(coverUrl) {
   return typeof coverUrl === 'string' ? coverUrl.trim() : '';
-}
-
-function normalizeThumbnailUrl(thumbnailUrl) {
-  return typeof thumbnailUrl === 'string' ? thumbnailUrl.trim() : '';
-}
-
-async function ensureRecipeThumbnailColumn() {
-  if (env.useMockDb) {
-    return;
-  }
-
-  if (!thumbnailColumnReadyPromise) {
-    thumbnailColumnReadyPromise = (async () => {
-      const rows = await query(
-        `SELECT COLUMN_NAME
-         FROM INFORMATION_SCHEMA.COLUMNS
-         WHERE TABLE_SCHEMA = DATABASE()
-           AND TABLE_NAME = 'family_recipes'
-           AND COLUMN_NAME = 'thumbnail_url'
-         LIMIT 1`
-      );
-
-      if (!rows.length) {
-        try {
-          await query('ALTER TABLE family_recipes ADD COLUMN thumbnail_url VARCHAR(255) DEFAULT NULL AFTER cover_url');
-        } catch (error) {
-          if (error.code !== 'ER_DUP_FIELDNAME') {
-            throw error;
-          }
-        }
-      }
-    })().catch((error) => {
-      thumbnailColumnReadyPromise = null;
-      throw error;
-    });
-  }
-
-  await thumbnailColumnReadyPromise;
 }
 
 function normalizeText(value) {
@@ -178,7 +139,6 @@ function normalizeRecipeItem(recipeItem, currentRecipe = null) {
     name,
     category: normalizeText(recipe.category),
     coverUrl: normalizeCoverUrl(recipe.coverUrl || recipe.cover),
-    thumbnailUrl: normalizeThumbnailUrl(recipe.thumbnailUrl || recipe.thumbnail || recipe.thumbUrl),
     difficulty: normalizeText(recipe.difficulty),
     duration: normalizeText(recipe.duration),
     favorite: normalizeBoolean(recipe.favorite, false),
@@ -225,8 +185,6 @@ function toRecipeItem(row, ingredients = []) {
     category: row.category || '',
     cover: row.cover_url || '',
     coverUrl: row.cover_url || '',
-    thumbnail: row.thumbnail_url || row.cover_url || '',
-    thumbnailUrl: row.thumbnail_url || row.cover_url || '',
     difficulty: row.difficulty || '',
     duration: row.duration || '',
     favorite: Boolean(row.favorite),
@@ -247,7 +205,6 @@ function toFamilyRecipe(familyCode, recipes = []) {
   return {
     familyCode,
     coverUrl: coverRecipe?.coverUrl || '',
-    thumbnailUrl: coverRecipe?.thumbnailUrl || coverRecipe?.coverUrl || '',
     recipeJson: {
       recipes
     },
@@ -873,7 +830,6 @@ async function getRecipeItemByFamily(familyCode, recipeId) {
     );
   }
 
-  await ensureRecipeThumbnailColumn();
   const rows = await query(
     `SELECT ${FAMILY_RECIPE_COLUMNS}
      FROM family_recipes
@@ -918,14 +874,7 @@ async function upsertRecipeItem(familyCode, memberCode, recipeItem, options = {}
 
   const normalized = normalizeRecipeItem(recipeItem, currentRecipe);
   const optionCoverUrl = normalizeCoverUrl(options.coverUrl);
-  const optionThumbnailUrl = normalizeThumbnailUrl(options.thumbnailUrl);
-  const incomingCoverUrl = rawRecipe && typeof rawRecipe === 'object'
-    ? normalizeCoverUrl(rawRecipe.coverUrl || rawRecipe.cover)
-    : '';
   const coverUrl = optionCoverUrl || normalized.coverUrl || null;
-  const thumbnailUrl = optionThumbnailUrl
-    || (optionCoverUrl || incomingCoverUrl ? coverUrl : normalized.thumbnailUrl)
-    || coverUrl;
 
   if (env.useMockDb) {
     const key = getRecipeKey(familyCode, normalized.id);
@@ -938,7 +887,6 @@ async function upsertRecipeItem(familyCode, memberCode, recipeItem, options = {}
       name: normalized.name,
       category: normalized.category || null,
       cover_url: coverUrl ?? current?.cover_url ?? null,
-      thumbnail_url: thumbnailUrl ?? current?.thumbnail_url ?? null,
       difficulty: normalized.difficulty || null,
       duration: normalized.duration || null,
       favorite: normalized.favorite ? 1 : 0,
@@ -957,16 +905,14 @@ async function upsertRecipeItem(familyCode, memberCode, recipeItem, options = {}
     return toRecipeItem(row, normalized.ingredients);
   }
 
-  await ensureRecipeThumbnailColumn();
   await query(
     `INSERT INTO family_recipes
-       (family_code, recipe_id, name, category, cover_url, thumbnail_url, difficulty, duration, favorite, own, steps_json, created_by, updated_by, version)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+       (family_code, recipe_id, name, category, cover_url, difficulty, duration, favorite, own, steps_json, created_by, updated_by, version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
      ON DUPLICATE KEY UPDATE
        name = VALUES(name),
        category = VALUES(category),
        cover_url = VALUES(cover_url),
-       thumbnail_url = VALUES(thumbnail_url),
        difficulty = VALUES(difficulty),
        duration = VALUES(duration),
        favorite = VALUES(favorite),
@@ -982,7 +928,6 @@ async function upsertRecipeItem(familyCode, memberCode, recipeItem, options = {}
       normalized.name,
       normalized.category || null,
       coverUrl,
-      thumbnailUrl,
       normalized.difficulty || null,
       normalized.duration || null,
       normalized.favorite ? 1 : 0,
@@ -1137,7 +1082,7 @@ async function deleteFamilyRecipeItemByDevice(deviceId, familyCode, recipeId) {
   };
 }
 
-async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl, thumbnailUrl = '') {
+async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl) {
   const member = await getFamilyMemberByDevice(deviceId, familyCode);
 
   if (!member) {
@@ -1145,7 +1090,6 @@ async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl, t
   }
 
   const normalizedCoverUrl = normalizeCoverUrl(coverUrl);
-  const normalizedThumbnailUrl = normalizeThumbnailUrl(thumbnailUrl) || normalizedCoverUrl;
 
   if (env.useMockDb) {
     const current = Array.from(mockFamilyRecipes.values())
@@ -1154,7 +1098,6 @@ async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl, t
 
     if (current) {
       current.cover_url = normalizedCoverUrl;
-      current.thumbnail_url = normalizedThumbnailUrl;
       current.updated_at = new Date().toISOString();
       mockFamilyRecipes.set(getRecipeKey(member.familyCode, current.recipe_id), current);
     }
@@ -1165,14 +1108,13 @@ async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl, t
     };
   }
 
-  await ensureRecipeThumbnailColumn();
   await query(
     `UPDATE family_recipes
-     SET cover_url = ?, thumbnail_url = ?, updated_at = CURRENT_TIMESTAMP
+     SET cover_url = ?, updated_at = CURRENT_TIMESTAMP
      WHERE family_code = ? AND deleted_at IS NULL
      ORDER BY id ASC
      LIMIT 1`,
-    [normalizedCoverUrl, normalizedThumbnailUrl, member.familyCode]
+    [normalizedCoverUrl, member.familyCode]
   );
 
   return {
@@ -1194,7 +1136,6 @@ async function getFamilyRecipeByCode(familyCode) {
     return recipes.length ? toFamilyRecipe(familyCode, recipes) : null;
   }
 
-  await ensureRecipeThumbnailColumn();
   const rows = await query(
     `SELECT ${FAMILY_RECIPE_COLUMNS}
      FROM family_recipes

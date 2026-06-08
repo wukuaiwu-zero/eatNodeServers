@@ -132,7 +132,6 @@ function normalizeRecord(recordInput) {
   const source = normalizeText(parsed.source);
   const emoji = normalizeText(parsed.emoji);
   const photo = normalizeText(parsed.photo || parsed.photoUrl || parsed.imageUrl);
-  const thumbnailUrl = normalizeText(parsed.thumbnailUrl || parsed.thumbnail || parsed.thumbUrl);
   const notes = normalizeText(parsed.notes || parsed.note);
   const costValue = parsed.cost ?? parsed.price;
   const cost = costValue === undefined || costValue === null || costValue === ''
@@ -147,7 +146,7 @@ function normalizeRecord(recordInput) {
     throw new TypeError('心情表情太长了，不能超过 20 个字符');
   }
 
-  if (photo.length > 255 || thumbnailUrl.length > 255) {
+  if (photo.length > 255) {
     throw new TypeError('打卡图片 URL 太长了，不能超过 255 个字符');
   }
 
@@ -165,7 +164,6 @@ function normalizeRecord(recordInput) {
   if (source) record.source = source;
   if (emoji) record.emoji = emoji;
   if (photo) record.photo = photo;
-  if (thumbnailUrl) record.thumbnailUrl = thumbnailUrl;
   if (cost !== null) record.cost = Math.round(cost * 100) / 100;
   if (tags.length) record.tags = tags;
   if (notes) record.notes = notes;

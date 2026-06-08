@@ -3323,7 +3323,7 @@
             "description": "用户在选菜弹窗点击确定时，批量保存或覆盖当天三餐安排。meals 支持 meal_name/mealName，菜品列表使用 recipes；每个餐次可选 record 字段保存打卡详情。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"family_code\": \"{{familyCode}}\",\n  \"date\": \"2026-06-05\",\n  \"meals\": [\n    {\n      \"meal_name\": \"早餐\",\n      \"done\": 0,\n      \"recipes\": [\n        \"鸡蛋\",\n        \"牛奶\"\n      ]\n    },\n    {\n      \"meal_name\": \"午餐\",\n      \"done\": 0,\n      \"recipes\": [\n        \"番茄炒蛋\",\n        \"米饭\"\n      ]\n    },\n    {\n      \"meal_name\": \"晚餐\",\n      \"done\": 1,\n      \"recipes\": [\n        \"清炒时蔬\",\n        \"蔬菜沙拉\"\n      ],\n      \"record\": {\n        \"source\": \"自己做\",\n        \"emoji\": \"😋\",\n        \"photo\": \"/uploads/diet-photos/fam_xxx/meal_20260605.jpg\",\n        \"thumbnailUrl\": \"/uploads/diet-photos/fam_xxx/meal_20260605_thumb.webp\",\n        \"cost\": 15.5,\n        \"tags\": [\n          \"低脂\",\n          \"健康\"\n        ],\n        \"notes\": \"今天自己做了减脂餐，少油少盐。\"\n      }\n    }\n  ]\n}",
+              "raw": "{\n  \"family_code\": \"{{familyCode}}\",\n  \"date\": \"2026-06-05\",\n  \"meals\": [\n    {\n      \"meal_name\": \"早餐\",\n      \"done\": 0,\n      \"recipes\": [\n        \"鸡蛋\",\n        \"牛奶\"\n      ]\n    },\n    {\n      \"meal_name\": \"午餐\",\n      \"done\": 0,\n      \"recipes\": [\n        \"番茄炒蛋\",\n        \"米饭\"\n      ]\n    },\n    {\n      \"meal_name\": \"晚餐\",\n      \"done\": 1,\n      \"recipes\": [\n        \"清炒时蔬\",\n        \"蔬菜沙拉\"\n      ],\n      \"record\": {\n        \"source\": \"自己做\",\n        \"emoji\": \"😋\",\n        \"photo\": \"/uploads/diet-photos/fam_xxx/meal_20260605.jpg\",\n        \"cost\": 15.5,\n        \"tags\": [\n          \"低脂\",\n          \"健康\"\n        ],\n        \"notes\": \"今天自己做了减脂餐，少油少盐。\"\n      }\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3371,7 +3371,7 @@
             "description": "用户在卡片上直接勾选完成/未完成时触发，按家庭、日期、餐次更新 done 状态。可选 record 字段用于同时保存三餐打卡详情；不传 record 时保留原记录。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"family_code\": \"{{familyCode}}\",\n  \"date\": \"2026-06-05\",\n  \"meal_name\": \"晚餐\",\n  \"done\": 1,\n  \"record\": {\n    \"source\": \"自己做\",\n    \"emoji\": \"😋\",\n    \"photo\": \"/uploads/diet-photos/fam_xxx/meal_20260605.jpg\",\n    \"thumbnailUrl\": \"/uploads/diet-photos/fam_xxx/meal_20260605_thumb.webp\",\n    \"cost\": 15.5,\n    \"tags\": [\n      \"低脂\",\n      \"健康\"\n    ],\n    \"notes\": \"今天自己做了减脂餐，少油少盐。\"\n  }\n}",
+              "raw": "{\n  \"family_code\": \"{{familyCode}}\",\n  \"date\": \"2026-06-05\",\n  \"meal_name\": \"晚餐\",\n  \"done\": 1,\n  \"record\": {\n    \"source\": \"自己做\",\n    \"emoji\": \"😋\",\n    \"photo\": \"/uploads/diet-photos/fam_xxx/meal_20260605.jpg\",\n    \"cost\": 15.5,\n    \"tags\": [\n      \"低脂\",\n      \"健康\"\n    ],\n    \"notes\": \"今天自己做了减脂餐，少油少盐。\"\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3462,7 +3462,7 @@
               ],
               "query": []
             },
-            "description": "上传三餐打卡照片。支持 imageData/imageBase64/photoImage，格式支持 jpeg/png/webp/gif，最大 4MB；返回 photoUrl 和 thumbnailUrl，缩略图用于手账列表渲染。",
+            "description": "上传三餐打卡照片。支持 imageData/imageBase64/photoImage，格式支持 jpeg/png/webp/gif，最大 4MB；返回 photoUrl，当前不生成缩略图。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"family_code\": \"{{familyCode}}\",\n  \"imageData\": \"data:image/png;base64,iVBORw0KGgo=\"\n}",

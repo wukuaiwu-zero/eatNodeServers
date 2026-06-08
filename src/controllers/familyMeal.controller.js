@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
 const deviceService = require('../services/device.service');
 const familyMealService = require('../services/familyMeal.service');
 const familyRecipeService = require('../services/familyRecipe.service');
@@ -9,8 +8,6 @@ const { getDeviceCredentials } = require('../utils/request');
 
 const FAMILY_CODE_MAX_LENGTH = 100;
 const MAX_DIET_PHOTO_BYTES = 4 * 1024 * 1024;
-const DIET_PHOTO_THUMBNAIL_WIDTH = 360;
-const DIET_PHOTO_THUMBNAIL_QUALITY = 70;
 const DIET_PHOTO_UPLOAD_DIR = path.join(__dirname, '../../public/uploads/diet-photos');
 const IMAGE_TYPES = {
   'image/jpeg': 'jpg',
@@ -96,26 +93,17 @@ function normalizeImageInput(req) {
   return { buffer, ext };
 }
 
-async function saveDietPhoto(familyCode, image) {
+function saveDietPhoto(familyCode, image) {
   const familyDir = path.join(DIET_PHOTO_UPLOAD_DIR, familyCode);
   fs.mkdirSync(familyDir, { recursive: true });
 
   const fileStem = `${Date.now().toString(36)}_${crypto.randomBytes(6).toString('hex')}`;
   const filename = `${fileStem}.${image.ext}`;
-  const thumbnailFilename = `${fileStem}_thumb.webp`;
   const filePath = path.join(familyDir, filename);
-  const thumbnailPath = path.join(familyDir, thumbnailFilename);
   fs.writeFileSync(filePath, image.buffer);
 
-  await sharp(image.buffer)
-    .rotate()
-    .resize({ width: DIET_PHOTO_THUMBNAIL_WIDTH, withoutEnlargement: true })
-    .webp({ quality: DIET_PHOTO_THUMBNAIL_QUALITY })
-    .toFile(thumbnailPath);
-
   return {
-    photoUrl: `/uploads/diet-photos/${familyCode}/${filename}`,
-    thumbnailUrl: `/uploads/diet-photos/${familyCode}/${thumbnailFilename}`
+    photoUrl: `/uploads/diet-photos/${familyCode}/${filename}`
   };
 }
 
@@ -263,7 +251,7 @@ async function uploadDietPhoto(req, res, next) {
     }
 
     const image = normalizeImageInput(req);
-    const imageUrls = await saveDietPhoto(member.familyCode, image);
+    const imageUrls = saveDietPhoto(member.familyCode, image);
 
     return res.json({
       data: {
