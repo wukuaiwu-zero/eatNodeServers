@@ -29,6 +29,10 @@
       "key": "memberId",
       "value": "{{deviceId}}",
       "type": "string"
+    },
+    {
+      "key": "adminFeedbackToken",
+      "value": ""
     }
   ],
   "item": [
@@ -4545,6 +4549,148 @@
               ]
             },
             "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems、consumptionRecords、dietPreferences、memos。个人随手记不属于家庭聚合数据，请单独调用 getPersonalNotes。"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "时光邮局反馈",
+      "item": [
+        {
+          "name": "提交意见反馈",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "feedback"
+              ],
+              "query": []
+            },
+            "description": "用户提交时光邮局信件。type 仅支持 love/idea/bug；content 最多300字；contact 最多50字。当前后端支持 X-User-Id，也兼容 X-Device-Id。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"love\",\n  \"content\": \"小厨房太好用了，非常治愈！\",\n  \"contact\": \"wx_123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "获取个人信件历史列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/feedback/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "feedback",
+                "list"
+              ],
+              "query": []
+            },
+            "description": "查询当前用户自己的反馈历史，按 created_at 倒序返回。当前后端支持 X-User-Id，也兼容 X-Device-Id。"
+          },
+          "response": []
+        },
+        {
+          "name": "管理员获取全量反馈列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminFeedbackToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/feedback/list",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "feedback",
+                "list"
+              ],
+              "query": []
+            },
+            "description": "全局管理员查询全部反馈信件，按 created_at 倒序返回。需要 Authorization: Bearer {{adminFeedbackToken}}。"
+          },
+          "response": []
+        },
+        {
+          "name": "管理员回信",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminFeedbackToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/feedback/reply",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "feedback",
+                "reply"
+              ],
+              "query": []
+            },
+            "description": "全局管理员对反馈信件回信。replyText 必填，最多200字。需要 Authorization: Bearer {{adminFeedbackToken}}。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"feedbackId\": 1718610789000,\n  \"replyText\": \"非常感谢您的建议，下个版本就会安排优化哦！\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }

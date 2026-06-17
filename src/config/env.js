@@ -5,6 +5,7 @@ const env = {
   port: Number(process.env.PORT) || 3000,
   useMockDb: process.env.USE_MOCK_DB === 'true',
   securityQuestionEncryptionKey: process.env.SECURITY_QUESTION_ENCRYPTION_KEY || '',
+  adminFeedbackToken: process.env.ADMIN_FEEDBACK_TOKEN || '',
   db: {
     host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT) || 3306,

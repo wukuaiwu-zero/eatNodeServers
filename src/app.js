@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 
 const actionRoutes = require('./routes/action.routes');
+const feedbackRoutes = require('./routes/feedback.routes');
 const { notFoundHandler, errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -18,6 +19,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 // - 查询类：GET /api/getXxx?query=params
 // - 增删改类：POST /api/saveXxx 或 /api/deleteXxx，参数放 JSON body
 app.use('/api', actionRoutes);
+app.use('/', feedbackRoutes);
+app.use('/api', feedbackRoutes);
 
 app.get('/demo', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/demo.html'));
