@@ -4,6 +4,7 @@ const familyRecipeService = require('./familyRecipe.service');
 
 const PROFILE_TABLE = 'family_member_health_profiles';
 const WEIGHT_TABLE = 'family_member_weight_records';
+const MAX_TREND_RANGE_DAYS = 366;
 
 const mockProfiles = new Map();
 const mockWeights = new Map();
@@ -76,6 +77,62 @@ function normalizeRecordDate(value) {
   return text;
 }
 
+function normalizeTrendDate(value, fieldName) {
+  const text = normalizeText(value);
+  if (!text) {
+    return null;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    throw new TypeError(`${fieldName}格式必须是 YYYY-MM-DD`);
+  }
+
+  const date = new Date(`${text}T00:00:00.000Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== text) {
+    throw new TypeError(`${fieldName}不是有效日期`);
+  }
+
+  return text;
+}
+
+function getDateDiffDays(startDate, endDate) {
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+
+  return Math.round((end.getTime() - start.getTime()) / 86400000);
+}
+
+function addDays(dateText, days) {
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function toDateText(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return String(value).slice(0, 10);
+}
+
+function buildDateRange(startDate, endDate) {
+  const diffDays = getDateDiffDays(startDate, endDate);
+
+  if (diffDays < 0) {
+    throw new TypeError('结束日期不能早于开始日期');
+  }
+
+  if (diffDays + 1 > MAX_TREND_RANGE_DAYS) {
+    throw new TypeError(`日期范围不能超过 ${MAX_TREND_RANGE_DAYS} 天`);
+  }
+
+  return Array.from({ length: diffDays + 1 }, (_, index) => addDays(startDate, index));
+}
+
 function getProfileKey(familyCode, memberCode) {
   return `${familyCode}:${memberCode}`;
 }
@@ -133,11 +190,41 @@ function toHealthMember(member, profile, weights) {
   };
 }
 
-function toWeightRecord(row) {
+function toWeightRecord(row, height = null) {
+  const recordDate = toDateText(row.record_date);
+  const weight = Number(row.weight);
+
   return {
-    recordDate: row.record_date,
-    record_date: row.record_date,
-    weight: Number(row.weight)
+    recordDate,
+    record_date: recordDate,
+    weight,
+    bmi: calculateBmi(weight, height)
+  };
+}
+
+function summarizeTrend(points) {
+  const recordedPoints = points.filter((point) => point.weight !== null);
+  const firstPoint = recordedPoints[0] || null;
+  const lastPoint = recordedPoints[recordedPoints.length - 1] || null;
+  const weights = recordedPoints.map((point) => point.weight);
+  const change = firstPoint && lastPoint
+    ? Math.round((lastPoint.weight - firstPoint.weight) * 10) / 10
+    : null;
+
+  return {
+    labels: points.map((point) => point.recordDate),
+    recordCount: recordedPoints.length,
+    record_count: recordedPoints.length,
+    firstWeight: firstPoint?.weight ?? null,
+    first_weight: firstPoint?.weight ?? null,
+    lastWeight: lastPoint?.weight ?? null,
+    last_weight: lastPoint?.weight ?? null,
+    weightChange: change,
+    weight_change: change,
+    minWeight: weights.length ? Math.min(...weights) : null,
+    min_weight: weights.length ? Math.min(...weights) : null,
+    maxWeight: weights.length ? Math.max(...weights) : null,
+    max_weight: weights.length ? Math.max(...weights) : null
   };
 }
 
@@ -231,7 +318,12 @@ async function getMemberDetailByDevice(deviceId, familyCode, memberCode) {
   ]);
   const profileRow = profiles.find((row) => row.member_code === access.targetMember.memberCode);
 
-  return toHealthMember(access.targetMember, toProfile(profileRow), weights.map(toWeightRecord));
+  const profile = toProfile(profileRow);
+  return toHealthMember(
+    access.targetMember,
+    profile,
+    weights.map((row) => toWeightRecord(row, profile.height))
+  );
 }
 
 async function withTransaction(callback) {
@@ -381,21 +473,81 @@ async function updateGoalByDevice(deviceId, familyCode, memberCode, input = {}) 
   return { goalType, targetWeight };
 }
 
-async function getTrendByDevice(deviceId, familyCode, memberCode, type = 'week') {
+async function getTrendByDevice(deviceId, familyCode, memberCode, options = {}) {
   const access = await assertDeviceCanAccessMember(deviceId, familyCode, memberCode);
 
   if (!access) {
     return null;
   }
 
-  const normalizedType = normalizeText(type) === 'month' ? 'month' : 'week';
+  const trendOptions = typeof options === 'string' ? { type: options } : options || {};
+  const startDate = normalizeTrendDate(trendOptions.startDate, '开始日期');
+  const endDate = normalizeTrendDate(trendOptions.endDate, '结束日期');
+  const [profiles, weights] = await Promise.all([
+    listProfilesByFamily(access.targetMember.familyCode),
+    listWeightsByFamily(access.targetMember.familyCode, [access.targetMember.memberCode])
+  ]);
+  const profileRow = profiles.find((row) => row.member_code === access.targetMember.memberCode);
+  const profile = toProfile(profileRow);
+
+  if (startDate || endDate) {
+    if (!startDate || !endDate) {
+      throw new TypeError('请同时填写开始日期和结束日期');
+    }
+
+    const weightMap = new Map(weights.map((row) => {
+      const record = toWeightRecord(row, profile.height);
+      return [record.recordDate, record];
+    }));
+    const points = buildDateRange(startDate, endDate).map((recordDate) => {
+      const record = weightMap.get(recordDate);
+
+      return {
+        recordDate,
+        record_date: recordDate,
+        weight: record?.weight ?? null,
+        bmi: record?.bmi ?? null,
+        hasRecord: Boolean(record),
+        has_record: Boolean(record)
+      };
+    });
+    const summary = summarizeTrend(points);
+
+    return {
+      type: 'range',
+      startDate,
+      start_date: startDate,
+      endDate,
+      end_date: endDate,
+      days: points.length,
+      memberId: access.targetMember.memberCode,
+      member_id: access.targetMember.memberCode,
+      height: profile.height,
+      targetWeight: profile.targetWeight,
+      startWeight: profile.startWeight,
+      labels: summary.labels,
+      displayedHistory: points.map((point) => point.weight),
+      summary,
+      points
+    };
+  }
+
+  const normalizedType = normalizeText(trendOptions.type) === 'month' ? 'month' : 'week';
   const limit = normalizedType === 'month' ? 31 : 7;
-  const weights = await listWeightsByFamily(access.targetMember.familyCode, [access.targetMember.memberCode]);
-  const points = weights.slice(-limit).map(toWeightRecord);
+  const points = weights.slice(-limit).map((row) => toWeightRecord(row, profile.height));
+  const summary = summarizeTrend(points);
 
   return {
     type: normalizedType,
+    days: points.length,
+    memberId: access.targetMember.memberCode,
+    member_id: access.targetMember.memberCode,
+    height: profile.height,
+    targetWeight: profile.targetWeight,
+    startWeight: profile.startWeight,
+    labels: summary.labels,
     displayedHistory: points.map((point) => point.weight),
+    summary,
     points
   };
 }

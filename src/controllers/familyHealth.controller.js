@@ -168,7 +168,11 @@ async function getTrend(req, res, next) {
       device.deviceId,
       familyCode,
       memberId,
-      getInput(req, 'type')
+      {
+        type: getInput(req, 'type'),
+        startDate: getInput(req, 'startDate') || getInput(req, 'start_date'),
+        endDate: getInput(req, 'endDate') || getInput(req, 'end_date')
+      }
     );
 
     if (!data) {
