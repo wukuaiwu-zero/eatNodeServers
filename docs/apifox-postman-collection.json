@@ -3975,7 +3975,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}/trend?family_code={{familyCode}}&type=week",
+              "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}/trend?family_code={{familyCode}}&startDate=2026-06-01&endDate=2026-06-07",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -3993,14 +3993,85 @@
                   "value": "{{familyCode}}"
                 },
                 {
+                  "key": "startDate",
+                  "value": "2026-06-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2026-06-07"
+                },
+                {
                   "key": "type",
-                  "value": "week"
+                  "value": "week",
+                  "description": "不传 startDate/endDate 时生效，支持 week/month。"
                 }
               ]
             },
-            "description": "获取体重趋势数据。type 支持 week/month，displayedHistory 顺序与 points 顺序一致。"
+            "description": "获取体重趋势图表数据。推荐传 startDate 和 endDate 查询闭区间日期范围，格式 YYYY-MM-DD，最多 366 天；返回范围内每天一个 points 点，没有体重记录的日期 weight/bmi 为 null，hasRecord 为 false。兼容 start_date/end_date 参数名。不传日期范围时回退为旧逻辑，type 支持 week/month。displayedHistory 顺序与 labels、points 顺序一致。summary 会根据已有记录推算记录数、首末体重、体重变化、最高/最低体重等图表辅助参数。"
           },
-          "response": []
+          "response": [
+            {
+              "name": "范围趋势示例响应",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Device-Id",
+                    "value": "{{deviceId}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "X-Device-Secret",
+                    "value": "{{deviceSecret}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/family/health/member/{{memberId}}/trend?family_code={{familyCode}}&startDate=2026-06-01&endDate=2026-06-07",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "family",
+                    "health",
+                    "member",
+                    "{{memberId}}",
+                    "trend"
+                  ],
+                  "query": [
+                    {
+                      "key": "family_code",
+                      "value": "{{familyCode}}"
+                    },
+                    {
+                      "key": "startDate",
+                      "value": "2026-06-01"
+                    },
+                    {
+                      "key": "endDate",
+                      "value": "2026-06-07"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"type\": \"range\",\n    \"startDate\": \"2026-06-01\",\n    \"start_date\": \"2026-06-01\",\n    \"endDate\": \"2026-06-07\",\n    \"end_date\": \"2026-06-07\",\n    \"days\": 7,\n    \"memberId\": \"member_xxx\",\n    \"member_id\": \"member_xxx\",\n    \"height\": 175,\n    \"targetWeight\": 70,\n    \"startWeight\": 75.2,\n    \"labels\": [\n      \"2026-06-01\",\n      \"2026-06-02\",\n      \"2026-06-03\",\n      \"2026-06-04\",\n      \"2026-06-05\",\n      \"2026-06-06\",\n      \"2026-06-07\"\n    ],\n    \"displayedHistory\": [\n      75.2,\n      null,\n      74.8,\n      null,\n      null,\n      74.5,\n      74.3\n    ],\n    \"summary\": {\n      \"labels\": [\n        \"2026-06-01\",\n        \"2026-06-02\",\n        \"2026-06-03\",\n        \"2026-06-04\",\n        \"2026-06-05\",\n        \"2026-06-06\",\n        \"2026-06-07\"\n      ],\n      \"recordCount\": 4,\n      \"record_count\": 4,\n      \"firstWeight\": 75.2,\n      \"first_weight\": 75.2,\n      \"lastWeight\": 74.3,\n      \"last_weight\": 74.3,\n      \"weightChange\": -0.9,\n      \"weight_change\": -0.9,\n      \"minWeight\": 74.3,\n      \"min_weight\": 74.3,\n      \"maxWeight\": 75.2,\n      \"max_weight\": 75.2\n    },\n    \"points\": [\n      {\n        \"recordDate\": \"2026-06-01\",\n        \"record_date\": \"2026-06-01\",\n        \"weight\": 75.2,\n        \"bmi\": 24.6,\n        \"hasRecord\": true,\n        \"has_record\": true\n      },\n      {\n        \"recordDate\": \"2026-06-02\",\n        \"record_date\": \"2026-06-02\",\n        \"weight\": null,\n        \"bmi\": null,\n        \"hasRecord\": false,\n        \"has_record\": false\n      }\n    ]\n  }\n}"
+            }
+          ]
         },
         {
           "name": "获取成员食谱推荐",
