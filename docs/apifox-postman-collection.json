@@ -2906,6 +2906,92 @@
           "response": []
         },
         {
+          "name": "查询消费月周图表数据",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyConsumptionChart?familyCode={{familyCode}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyConsumptionChart"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
+            },
+            "description": "返回当前北京时间所在月的 month 数组和所在周周一至周日的 week 数组。每项格式为 { date: YYYY-MM-DD, value: 金额 }；已到日期没有消费时 value 为 0，未来未到日期为 null。响应路径为 data.month / data.week。"
+          },
+          "response": []
+        },
+        {
+          "name": "查询当日消费分类下钻图表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyConsumptionDailyChart?familyCode={{familyCode}}&date=2026-08-04",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "getFamilyConsumptionDailyChart"
+              ],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-08-04"
+                }
+              ]
+            },
+            "description": "按指定消费日期下钻，date 必填且格式为 YYYY-MM-DD。返回 data.date 和 data.charts；charts 每项为 { type: 分类名称, value: 金额 }，可直接用于分类消费柱状图。"
+          },
+          "response": []
+        },
+        {
           "name": "删除消费记录",
           "request": {
             "method": "POST",

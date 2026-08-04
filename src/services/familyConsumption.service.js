@@ -3,6 +3,8 @@ const { env } = require('../config/env');
 const familyRecipeService = require('./familyRecipe.service');
 
 const TABLE_NAME = 'family_consumption_records';
+const SHOPPING_CATEGORY_TABLE = 'family_shopping_categories';
+const BEIJING_TIME_ZONE = 'Asia/Shanghai';
 
 const mockRecords = new Map();
 
@@ -61,6 +63,88 @@ function normalizeDateBoundary(value, fieldName, suffix) {
   }
 
   return `${text} ${suffix}`;
+}
+
+function normalizeCalendarDate(value, fieldName = '日期') {
+  const text = normalizeText(value);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+    throw new TypeError(`${fieldName}格式不正确`);
+  }
+
+  const parsed = new Date(`${text}T00:00:00.000Z`);
+
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== text) {
+    throw new TypeError(`${fieldName}格式不正确`);
+  }
+
+  return text;
+}
+
+function formatBeijingDate(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: BEIJING_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function addDays(date, amount) {
+  const normalizedDate = normalizeCalendarDate(date);
+  const nextDate = new Date(`${normalizedDate}T00:00:00.000Z`);
+  nextDate.setUTCDate(nextDate.getUTCDate() + amount);
+  return nextDate.toISOString().slice(0, 10);
+}
+
+function getMonthEnd(date) {
+  const normalizedDate = normalizeCalendarDate(date);
+  const [year, month] = normalizedDate.split('-').map(Number);
+  return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+}
+
+function getConsumptionChartRanges(now = new Date()) {
+  const today = formatBeijingDate(now);
+  const weekday = new Date(`${today}T00:00:00.000Z`).getUTCDay();
+  const weekStartDate = addDays(today, -((weekday + 6) % 7));
+
+  return {
+    today,
+    month: {
+      startDate: `${today.slice(0, 8)}01`,
+      endDate: getMonthEnd(today)
+    },
+    week: {
+      startDate: weekStartDate,
+      endDate: addDays(weekStartDate, 6)
+    }
+  };
+}
+
+function buildDailySeries(startDate, endDate, today, totals) {
+  const normalizedStartDate = normalizeCalendarDate(startDate, '开始日期');
+  const normalizedEndDate = normalizeCalendarDate(endDate, '结束日期');
+  const normalizedToday = normalizeCalendarDate(today, '当前日期');
+  const series = [];
+
+  for (let date = normalizedStartDate; date <= normalizedEndDate; date = addDays(date, 1)) {
+    series.push({
+      date,
+      value: date > normalizedToday ? null : Number(totals.get(date) || 0)
+    });
+  }
+
+  return series;
+}
+
+function normalizeChartRows(rows) {
+  return rows.map((row) => ({
+    type: normalizeText(row.type) || '未分类',
+    value: Number(row.value) || 0
+  }));
 }
 
 function normalizeTimeValue(value) {
@@ -339,6 +423,110 @@ async function listRecordsByDevice(deviceId, options = {}) {
   return { member, records };
 }
 
+async function listDailyTotalsByFamily(familyCode, startDate, endDate) {
+  if (env.useMockDb) {
+    const totals = new Map();
+
+    for (const row of mockRecords.values()) {
+      if (row.family_code !== familyCode || row.deleted_at || row.consume_date < startDate || row.consume_date > endDate) {
+        continue;
+      }
+
+      totals.set(row.consume_date, (totals.get(row.consume_date) || 0) + Number(row.price));
+    }
+
+    return totals;
+  }
+
+  const rows = await query(
+    `SELECT DATE_FORMAT(consume_date, '%Y-%m-%d') AS date, ROUND(SUM(price), 2) AS value
+     FROM ${TABLE_NAME}
+     WHERE family_code = ?
+       AND deleted_at IS NULL
+       AND consume_date >= ?
+       AND consume_date < DATE_ADD(?, INTERVAL 1 DAY)
+     GROUP BY DATE_FORMAT(consume_date, '%Y-%m-%d')`,
+    [familyCode, startDate, endDate]
+  );
+
+  return new Map(rows.map((row) => [row.date, Number(row.value)]));
+}
+
+async function getConsumptionChartByDevice(deviceId, familyCode) {
+  const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    return null;
+  }
+
+  const ranges = getConsumptionChartRanges();
+  const [monthTotals, weekTotals] = await Promise.all([
+    listDailyTotalsByFamily(member.familyCode, ranges.month.startDate, ranges.month.endDate),
+    listDailyTotalsByFamily(member.familyCode, ranges.week.startDate, ranges.week.endDate)
+  ]);
+
+  return {
+    member,
+    month: buildDailySeries(ranges.month.startDate, ranges.month.endDate, ranges.today, monthTotals),
+    week: buildDailySeries(ranges.week.startDate, ranges.week.endDate, ranges.today, weekTotals)
+  };
+}
+
+async function listDailyCategoryTotalsByFamily(familyCode, date) {
+  if (env.useMockDb) {
+    const categoryService = require('./familyShoppingCategory.service');
+    const categories = await categoryService.listCategoriesByFamily(familyCode);
+    const categoryNames = new Map(categories.map((category) => [category.categoryId, category.name]));
+    const totals = new Map();
+
+    for (const row of mockRecords.values()) {
+      if (row.family_code !== familyCode || row.deleted_at || row.consume_date !== date) {
+        continue;
+      }
+
+      const type = categoryNames.get(row.category_id) || row.category_id || '未分类';
+      totals.set(type, (totals.get(type) || 0) + Number(row.price));
+    }
+
+    return normalizeChartRows(
+      Array.from(totals, ([type, value]) => ({ type, value }))
+        .sort((a, b) => b.value - a.value || a.type.localeCompare(b.type))
+    );
+  }
+
+  const rows = await query(
+    `SELECT COALESCE(NULLIF(c.name, ''), NULLIF(r.category_id, ''), '未分类') AS type,
+            ROUND(SUM(r.price), 2) AS value
+     FROM ${TABLE_NAME} r
+     LEFT JOIN ${SHOPPING_CATEGORY_TABLE} c
+       ON c.family_code = r.family_code AND c.category_id = r.category_id AND c.deleted_at IS NULL
+     WHERE r.family_code = ?
+       AND r.deleted_at IS NULL
+       AND r.consume_date >= ?
+       AND r.consume_date < DATE_ADD(?, INTERVAL 1 DAY)
+     GROUP BY r.category_id, c.name
+     ORDER BY value DESC, type ASC`,
+    [familyCode, date, date]
+  );
+
+  return normalizeChartRows(rows);
+}
+
+async function getDailyConsumptionChartByDevice(deviceId, familyCode, date) {
+  const normalizedDate = normalizeCalendarDate(date);
+  const member = await familyRecipeService.getFamilyMemberByDevice(deviceId, familyCode);
+
+  if (!member) {
+    return null;
+  }
+
+  return {
+    member,
+    date: normalizedDate,
+    charts: await listDailyCategoryTotalsByFamily(member.familyCode, normalizedDate)
+  };
+}
+
 async function deleteRecordByFamily(familyCode, recordId, memberCode) {
   const record = await getRecordByFamily(familyCode, recordId);
 
@@ -391,5 +579,11 @@ module.exports = {
   getRecordByDevice,
   listRecordsByDevice,
   deleteRecordByDevice,
-  listRecordsByFamily
+  listRecordsByFamily,
+  getConsumptionChartByDevice,
+  getDailyConsumptionChartByDevice,
+  getConsumptionChartRanges,
+  buildDailySeries,
+  normalizeCalendarDate,
+  normalizeChartRows
 };

@@ -139,6 +139,57 @@ async function listRecords(req, res, next) {
   }
 }
 
+async function getConsumptionChart(req, res, next) {
+  try {
+    const familyCode = getFamilyCode(req);
+    const familyCodeError = validateText(familyCode, '家庭码', FAMILY_CODE_MAX_LENGTH);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+    if (familyCodeError) {
+      return res.status(400).json({ message: familyCodeError });
+    }
+
+    const data = await familyConsumptionService.getConsumptionChartByDevice(device.deviceId, familyCode);
+
+    if (!data) {
+      return res.status(404).json({ message: '家庭成员不存在' });
+    }
+
+    return res.json({ data });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function getDailyConsumptionChart(req, res, next) {
+  try {
+    const familyCode = getFamilyCode(req);
+    const date = normalizeText(getInput(req, 'date'));
+    const familyCodeError = validateText(familyCode, '家庭码', FAMILY_CODE_MAX_LENGTH);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+    if (familyCodeError) {
+      return res.status(400).json({ message: familyCodeError });
+    }
+
+    const data = await familyConsumptionService.getDailyConsumptionChartByDevice(device.deviceId, familyCode, date);
+
+    if (!data) {
+      return res.status(404).json({ message: '家庭成员不存在' });
+    }
+
+    return res.json({ data });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return next(error);
+  }
+}
+
 async function deleteRecord(req, res, next) {
   try {
     const familyCode = getFamilyCode(req);
@@ -168,5 +219,7 @@ module.exports = {
   upsertRecord,
   getRecord,
   listRecords,
+  getConsumptionChart,
+  getDailyConsumptionChart,
   deleteRecord
 };

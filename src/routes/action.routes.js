@@ -111,6 +111,8 @@ router.post('/saveFamilyConsumptionRecord', writeLimiter, familyConsumptionContr
 router.post('/updateFamilyConsumptionRecord', writeLimiter, familyConsumptionController.upsertRecord);
 router.get('/getFamilyConsumptionRecord', familyConsumptionController.getRecord);
 router.get('/getFamilyConsumptionRecords', familyConsumptionController.listRecords);
+router.get('/getFamilyConsumptionChart', familyConsumptionController.getConsumptionChart);
+router.get('/getFamilyConsumptionDailyChart', familyConsumptionController.getDailyConsumptionChart);
 router.post('/deleteFamilyConsumptionRecord', writeLimiter, familyConsumptionController.deleteRecord);
 
 router.post('/saveFamilyDietPreference', writeLimiter, familyDietPreferenceController.upsertPreference);
