@@ -579,6 +579,8 @@ async function getRecommendationsByDevice(deviceId, familyCode, memberCode, goal
 
 module.exports = {
   listMembersByDevice,
+  listProfilesByFamily,
+  normalizeGoalKey,
   getMemberDetailByDevice,
   recordWeightByDevice,
   updateGoalByDevice,

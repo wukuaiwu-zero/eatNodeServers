@@ -1,5 +1,6 @@
 const deviceService = require('../services/device.service');
 const familyRecipePoolService = require('../services/familyRecipePool.service');
+const familyRecipePoolDrawService = require('../services/familyRecipePoolDraw.service');
 const { getDeviceCredentials } = require('../utils/request');
 const { paginateDataList } = require('../utils/pagination');
 
@@ -109,8 +110,88 @@ async function deleteDish(req, res, next) {
   }
 }
 
+async function drawDishes(req, res, next) {
+  try {
+    const familyCode = normalizeText(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+    );
+    const familyCodeError = validateText(familyCode, '家庭码', FAMILY_CODE_MAX_LENGTH);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+    if (familyCodeError) {
+      return res.status(400).json({ message: familyCodeError });
+    }
+
+    const data = await familyRecipePoolDrawService.drawByDevice(device.deviceId, familyCode, {
+      mealName: getInput(req, 'mealName') || getInput(req, 'meal_name'),
+      count: getInput(req, 'count'),
+      types: getInput(req, 'types'),
+      intent: getInput(req, 'intent'),
+      memberId: getInput(req, 'memberId') || getInput(req, 'member_id') || getInput(req, 'memberCode'),
+      context: req.body?.context,
+      excludeDishIds: getInput(req, 'excludeDishIds')
+        || getInput(req, 'exclude_dish_ids')
+        || getInput(req, 'excludeIds')
+    });
+
+    if (!data) {
+      return res.status(403).json({ message: '当前设备还没有加入这个家庭' });
+    }
+
+    return res.json({
+      data: {
+        drawId: data.drawId,
+        items: data.items,
+        context: data.context
+      }
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return next(error);
+  }
+}
+
+async function feedbackDraw(req, res, next) {
+  try {
+    const familyCode = normalizeText(
+      getInput(req, 'familyCode') || getInput(req, 'familycode') || getInput(req, 'family_id')
+    );
+    const familyCodeError = validateText(familyCode, '家庭码', FAMILY_CODE_MAX_LENGTH);
+    const { deviceId, deviceSecret } = getDeviceCredentials(req);
+    const device = await deviceService.authenticateDevice(deviceId, deviceSecret);
+
+    if (familyCodeError) {
+      return res.status(400).json({ message: familyCodeError });
+    }
+
+    const data = await familyRecipePoolDrawService.feedbackByDevice(device.deviceId, familyCode, {
+      drawId: getInput(req, 'drawId') || getInput(req, 'draw_id'),
+      dishId: getInput(req, 'dishId') || getInput(req, 'id') || getInput(req, '_id') || getInput(req, 'dish_id'),
+      action: getInput(req, 'action')
+    });
+
+    if (!data) {
+      return res.status(403).json({ message: '当前设备还没有加入这个家庭' });
+    }
+
+    return res.json({ data: data.feedback });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    return next(error);
+  }
+}
+
 module.exports = {
   upsertDish,
   listDishes,
-  deleteDish
+  deleteDish,
+  drawDishes,
+  feedbackDraw
 };

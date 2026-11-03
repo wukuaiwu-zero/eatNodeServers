@@ -1,6 +1,7 @@
 const { query } = require('../config/db');
 const { env } = require('../config/env');
 const familyService = require('./family.service');
+const publicRecipeCatalog = require('./publicRecipeCatalog.service');
 
 const mockFamilyRecipes = new Map();
 const mockFamilyRecipeIngredients = new Map();
@@ -858,6 +859,10 @@ async function upsertRecipeItem(familyCode, memberCode, recipeItem, options = {}
     : '';
   const mode = options.mode || 'upsert';
 
+  if (incomingId && publicRecipeCatalog.getRecipe(incomingId)) {
+    throw new TypeError('公共菜谱不能在家庭里修改，请改服务器上的公共菜谱文件');
+  }
+
   if (mode === 'update' && !incomingId) {
     throw new TypeError('更新菜谱必须带菜谱 ID');
   }
@@ -998,7 +1003,15 @@ async function getFamilyRecipeItemByDevice(deviceId, familyCode, recipeId) {
   const recipe = await getRecipeItemByFamily(member.familyCode, recipeId);
 
   if (!recipe) {
-    return null;
+    const publicRecipe = await findVisiblePublicRecipe(member.familyCode, recipeId);
+    if (!publicRecipe) {
+      return null;
+    }
+
+    return {
+      member,
+      recipe: publicRecipe
+    };
   }
 
   return {
@@ -1041,7 +1054,26 @@ async function deleteFamilyRecipeItemByDevice(deviceId, familyCode, recipeId) {
   const current = await getRecipeItemByFamily(member.familyCode, recipeId);
 
   if (!current) {
-    return null;
+    const hidden = await require('./familyRecipePool.service').hidePublicDish(
+      member.familyCode,
+      member.memberCode,
+      recipeId
+    );
+
+    if (!hidden) {
+      return null;
+    }
+
+    return {
+      member,
+      recipe: {
+        ...(hidden.recipe || publicRecipeCatalog.toRecipeItem(
+          publicRecipeCatalog.getRecipe(recipeId),
+          member.familyCode
+        )),
+        deleted: true
+      }
+    };
   }
 
   if (env.useMockDb) {
@@ -1123,17 +1155,15 @@ async function updateFamilyRecipeCoverByDevice(deviceId, familyCode, coverUrl) {
   };
 }
 
-async function getFamilyRecipeByCode(familyCode) {
+async function listOwnRecipeItems(familyCode) {
   if (env.useMockDb) {
-    const recipes = Array.from(mockFamilyRecipes.values())
+    return Array.from(mockFamilyRecipes.values())
       .filter((row) => row.family_code === familyCode && !row.deleted_at)
       .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at) || b.id - a.id)
       .map((row) => toRecipeItem(
         row,
         mockFamilyRecipeIngredients.get(getRecipeKey(familyCode, row.recipe_id)) || []
       ));
-
-    return recipes.length ? toFamilyRecipe(familyCode, recipes) : null;
   }
 
   const rows = await query(
@@ -1145,14 +1175,38 @@ async function getFamilyRecipeByCode(familyCode) {
   );
 
   if (!rows.length) {
-    return null;
+    return [];
   }
 
   const ingredientsByRecipe = await getIngredientsByFamily(familyCode);
-  const recipes = rows.map((row) => toRecipeItem(
+  return rows.map((row) => toRecipeItem(
     row,
     ingredientsByRecipe.get(row.recipe_id) || []
   ));
+}
+
+async function findVisiblePublicRecipe(familyCode, recipeId) {
+  const recipe = publicRecipeCatalog.getRecipe(recipeId);
+  if (!recipe) {
+    return null;
+  }
+
+  const hiddenIds = await require('./familyRecipePool.service').listHiddenPublicDishIds(familyCode);
+  if (hiddenIds.includes(recipe.id)) {
+    return null;
+  }
+
+  return publicRecipeCatalog.toRecipeItem(recipe, familyCode);
+}
+
+async function getFamilyRecipeByCode(familyCode) {
+  const ownRecipes = await listOwnRecipeItems(familyCode);
+  const hiddenIds = await require('./familyRecipePool.service').listHiddenPublicDishIds(familyCode);
+  const recipes = publicRecipeCatalog.mergeRecipes(ownRecipes, hiddenIds, familyCode);
+
+  if (!recipes.length) {
+    return null;
+  }
 
   return toFamilyRecipe(familyCode, recipes);
 }

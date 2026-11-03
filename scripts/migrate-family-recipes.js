@@ -313,6 +313,88 @@ async function migrateRecipePoolTypes(connection) {
   );
 }
 
+async function migrateRecipePoolWeightColumns(connection) {
+  if (!(await hasTable(connection, 'family_recipe_pool_items'))) {
+    console.log('family_recipe_pool_items does not exist; skipped recipe pool weight migration.');
+    return;
+  }
+
+  if (!(await hasColumn(connection, 'family_recipe_pool_items', 'recipe_id'))) {
+    await connection.execute(
+      `ALTER TABLE family_recipe_pool_items
+       ADD COLUMN recipe_id VARCHAR(64) DEFAULT NULL COMMENT '关联家庭菜谱ID' AFTER name`
+    );
+  }
+
+  if (!(await hasColumn(connection, 'family_recipe_pool_items', 'manual_weight'))) {
+    await connection.execute(
+      `ALTER TABLE family_recipe_pool_items
+       ADD COLUMN manual_weight DECIMAL(6,2) NOT NULL DEFAULT 1.00 COMMENT '手动权重' AFTER type`
+    );
+  }
+
+  if (!(await hasColumn(connection, 'family_recipe_pool_items', 'paused'))) {
+    await connection.execute(
+      `ALTER TABLE family_recipe_pool_items
+       ADD COLUMN paused TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否暂停参与抽签' AFTER manual_weight`
+    );
+  }
+
+  if (!(await hasIndex(connection, 'family_recipe_pool_items', 'idx_family_recipe_pool_recipe'))) {
+    await connection.execute(
+      `ALTER TABLE family_recipe_pool_items
+       ADD KEY idx_family_recipe_pool_recipe (family_code, recipe_id)`
+    );
+  }
+}
+
+async function migrateDrawEvents(connection) {
+  await connection.execute(
+    `CREATE TABLE IF NOT EXISTS family_recipe_pool_draw_events (
+      id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+      draw_id VARCHAR(64) NOT NULL COMMENT '同一次抽签批次ID',
+      family_code VARCHAR(64) NOT NULL COMMENT '家庭码',
+      dish_id VARCHAR(64) NOT NULL COMMENT '随机池菜品ID',
+      dish_name VARCHAR(100) NOT NULL COMMENT '菜品名称快照',
+      meal_name VARCHAR(50) DEFAULT NULL COMMENT '抽签餐次',
+      action VARCHAR(20) NOT NULL COMMENT 'drawn|accept|skip|cooked|reject',
+      score DECIMAL(10,4) DEFAULT NULL COMMENT '抽中时的权重分',
+      context_json JSON DEFAULT NULL COMMENT '抽签上下文快照',
+      created_by VARCHAR(64) DEFAULT NULL COMMENT '操作成员码',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+      PRIMARY KEY (id),
+      KEY idx_family_dish_time (family_code, dish_id, created_at),
+      KEY idx_draw (draw_id),
+      KEY idx_family_action_time (family_code, action, created_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜品随机池抽签事件'`
+  );
+}
+
+async function migrateAnchorPrices(connection) {
+  await connection.execute(
+    `CREATE TABLE IF NOT EXISTS family_anchor_prices (
+      id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+      anchor_id VARCHAR(64) NOT NULL COMMENT '锚定价格ID',
+      family_code VARCHAR(100) NOT NULL COMMENT '家庭码',
+      name VARCHAR(100) NOT NULL COMMENT '采购物件名称',
+      name_key VARCHAR(100) NOT NULL COMMENT '归一化名称，用于匹配',
+      tag VARCHAR(50) DEFAULT NULL COMMENT '可选区分：渠道/品牌/规格，空为默认锚定',
+      tag_key VARCHAR(50) NOT NULL DEFAULT '' COMMENT '归一化标签，空串表示默认',
+      anchor_price DECIMAL(10,2) NOT NULL COMMENT '锚定价格',
+      created_by VARCHAR(64) DEFAULT NULL COMMENT '创建成员码',
+      updated_by VARCHAR(64) DEFAULT NULL COMMENT '更新成员码',
+      version INT(11) NOT NULL DEFAULT 1 COMMENT '版本号',
+      deleted_at TIMESTAMP NULL DEFAULT NULL COMMENT '软删除时间',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+      PRIMARY KEY (id),
+      UNIQUE KEY uk_family_anchor_id (anchor_id),
+      UNIQUE KEY uk_family_anchor_name_tag (family_code, name_key, tag_key),
+      KEY idx_family_anchor_updated (family_code, updated_at)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='家庭采购锚定价格'`
+  );
+}
+
 async function main() {
   const connection = await mysql.createConnection({
     host: env.db.host,
@@ -327,6 +409,10 @@ async function main() {
     await migrateRecipes(connection);
     await migrateMembers(connection);
     await migrateRecipePoolTypes(connection);
+    await migrateRecipePoolWeightColumns(connection);
+    await migrateDrawEvents(connection);
+    await migrateAnchorPrices(connection);
+    console.log('recipe pool draw events and anchor prices are ready.');
   } finally {
     await connection.end();
   }

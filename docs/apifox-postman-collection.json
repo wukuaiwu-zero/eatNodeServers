@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "家庭厨房 Node API - 当前版本",
-    "description": "Postman v2.1 collection。推荐流程：registerDevice -> createFamily 或 joinFamily -> getFamilyData。除注册设备外，接口需要 X-Device-Id / X-Device-Secret。菜谱编辑请使用单条接口：saveFamilyRecipeItem 新增，updateFamilyRecipeItem 更新；购物/食材列表建议传 familyCode；家庭备忘录按 familyCode 绑定，个人随手记按当前设备 deviceId 绑定。",
+    "description": "Postman v2.1 collection。推荐流程：registerDevice -> createFamily 或 joinFamily -> getFamilyData。除注册设备外，接口需要 X-Device-Id / X-Device-Secret。菜谱编辑请使用单条接口：saveFamilyRecipeItem 新增，updateFamilyRecipeItem 更新；购物/食材列表建议传 familyCode；家庭备忘录按 familyCode 绑定，个人随手记按当前设备 deviceId 绑定。2026-11-03：菜谱和随机池会混入 source=public 的公共菜；随机抽菜用 drawFamilyRecipePool + feedbackFamilyRecipePoolDraw；锚定价格见 saveFamilyAnchorPrice，购物清单条目会附带 anchor。本次变更的独立集合见 docs/2026-11-03-postman-collection.json。",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -917,7 +917,7 @@
                 }
               ]
             },
-            "description": "查询单条菜谱详情。返回字段化菜谱、配料数组和 steps 数组。"
+            "description": "查询单条菜谱详情。返回字段化菜谱、配料数组和 steps 数组。公共菜 id 也可以查，未隐藏时 source=public。用公共 id 调 save/update 会 400。"
           },
           "response": []
         },
@@ -1095,7 +1095,7 @@
                 }
               ]
             },
-            "description": "按 familyCode 查询指定家庭菜谱列表，会校验当前设备是否有该家庭权限。返回 familyCode、recipeList；没有菜谱时 recipeList 返回空数组，不返回 404。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
+            "description": "按 familyCode 查询指定家庭菜谱列表，会校验当前设备是否有该家庭权限。返回 familyCode、recipeList；列表含未隐藏的公共菜（source=public），同名家庭菜会盖住公共菜。支持可选分页参数 page/pageSize；不传时返回完整列表。"
           },
           "response": []
         }
@@ -1136,7 +1136,7 @@
               ],
               "query": []
             },
-            "description": "新增/保存购物清单条目。shoppingItemJson 可不传 id，后端会生成 itemId。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。",
+            "description": "新增/保存购物清单条目。shoppingItemJson 可不传 id，后端会生成 itemId。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。返回的 item 多了 anchor，按名称匹配锚定价格，对不上为 null。price 仍是这次的自由文本。",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"shoppingItemJson\": {\n    \"name\": \"西红柿\",\n    \"num\": \"2个\",\n    \"categoryId\": \"shopping_cat_vegetable\",\n    \"price\": \"2元\",\n    \"done\": false\n  }\n}",
@@ -1274,7 +1274,7 @@
                 }
               ]
             },
-            "description": "查询指定家庭购物清单。建议设备加入多个家庭时始终传 familyCode，避免查到默认家庭。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
+            "description": "查询指定家庭购物清单。建议设备加入多个家庭时始终传 familyCode，避免查到默认家庭。返回 create_time/createTime 为 ISO 字符串，例如 2026-05-14T06:30:57.000Z。 支持可选分页参数 page/pageSize；不传时返回完整列表。每条额外返回 anchor：按名称匹配家庭锚定价格。有默认锚定则 anchor.anchorPrice 取默认；只有一条细分锚定则取该条；多条且无默认时 anchorPrice 为 null，用 anchorMin/anchorMax 表示区间；没有匹配时 anchor 为 null。"
           },
           "response": []
         },
@@ -1322,7 +1322,7 @@
                 }
               ]
             },
-            "description": "按分类查询指定家庭购物清单。返回 create_time/createTime 为 ISO 字符串。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
+            "description": "按分类查询指定家庭购物清单。返回 create_time/createTime 为 ISO 字符串。 支持可选分页参数 page/pageSize；不传时返回完整列表。条目同样带 anchor。"
           },
           "response": []
         },
@@ -1362,7 +1362,7 @@
                 }
               ]
             },
-            "description": "查询指定家庭购物清单增量。since 为上次同步拿到的 serverTime 毫秒时间戳；条目 create_time/createTime 为 ISO 字符串。"
+            "description": "查询指定家庭购物清单增量。since 为上次同步拿到的 serverTime 毫秒时间戳；条目 create_time/createTime 为 ISO 字符串。条目同样带 anchor。"
           },
           "response": []
         },
@@ -1492,6 +1492,212 @@
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "锚定价格",
+      "item": [
+        {
+          "name": "保存锚定价格",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/saveFamilyAnchorPrice",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "saveFamilyAnchorPrice"]
+            },
+            "description": "按家庭+物件名称保存长期锚定价格。同一名称+标签再次保存会改价，不新增。tag 可省略，表示该名称的默认锚定。anchorPrice 必须是数字。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"anchorPriceJson\": {\n    \"name\": \"牛奶\",\n    \"tag\": \"\",\n    \"anchorPrice\": 12\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询锚定价格列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyAnchorPrices?familyCode={{familyCode}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "getFamilyAnchorPrices"],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                }
+              ]
+            },
+            "description": "查询家庭锚定价格。可选 name 只看某个物件，可选 page/pageSize。"
+          },
+          "response": []
+        },
+        {
+          "name": "按名称匹配锚定价格",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matchFamilyAnchorPrice?familyCode={{familyCode}}&name=牛奶",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "matchFamilyAnchorPrice"],
+              "query": [
+                {
+                  "key": "familyCode",
+                  "value": "{{familyCode}}"
+                },
+                {
+                  "key": "name",
+                  "value": "牛奶"
+                }
+              ]
+            },
+            "description": "按物件名称返回参考价。不传 tag 时：有默认锚定用默认价；只有一条细分用该条；多条且无默认时 anchorPrice 为 null，看 anchorMin/anchorMax。传 tag 则只匹配那一条。"
+          },
+          "response": []
+        },
+        {
+          "name": "修改锚定价格",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json", "type": "text" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}", "type": "text" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/updateFamilyAnchorPrice",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "updateFamilyAnchorPrice"]
+            },
+            "description": "与 saveFamilyAnchorPrice 同一套逻辑。同一家庭+名称+标签会改价并沿用原 id。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"anchorPriceJson\": {\n    \"name\": \"牛奶\",\n    \"anchorPrice\": 13.5\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "按 id 查询锚定价格",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}", "type": "text" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyAnchorPrice?familyCode={{familyCode}}&id=anchor_xxx",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "getFamilyAnchorPrice"],
+              "query": [
+                { "key": "familyCode", "value": "{{familyCode}}" },
+                { "key": "id", "value": "anchor_xxx" }
+              ]
+            },
+            "description": "按锚定 id 取一条。不存在或已删除返回 404。"
+          },
+          "response": []
+        },
+        {
+          "name": "查询锚定价格增量",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}", "type": "text" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/getFamilyAnchorPriceChanges?familyCode={{familyCode}}&since=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "getFamilyAnchorPriceChanges"],
+              "query": [
+                { "key": "familyCode", "value": "{{familyCode}}" },
+                { "key": "since", "value": "0" }
+              ]
+            },
+            "description": "since 为上次响应的 serverTime 毫秒时间戳。结果包含软删除。"
+          },
+          "response": []
+        },
+        {
+          "name": "删除锚定价格",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deleteFamilyAnchorPrice",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "deleteFamilyAnchorPrice"]
+            },
+            "description": "软删除。传 id，或传 name 删除该名称的默认锚定。删除某个标签时必须同时传 tag。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"name\": \"牛奶\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
           },
           "response": []
@@ -2545,10 +2751,10 @@
               ],
               "query": []
             },
-            "description": "同一家庭下未删除菜品按 name + type 判重：不同 type 可同名，同 type 不能重复。type 枚举：外卖、堂食、做饭；不传默认做饭。",
+            "description": "同一家庭下未删除菜品按 name + type 判重：不同 type 可同名，同 type 不能重复。type 枚举：外卖、堂食、做饭；不传默认做饭。可选 manualWeight（0.2~3，默认 1）、paused（true 不参与抽签）、recipeId。和公共菜同名但 id 不同会 409。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dishJson\": {\n    \"name\": \"宫保鸡丁\",\n    \"type\": \"做饭\"\n  }\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dishJson\": {\n    \"name\": \"宫保鸡丁\",\n    \"type\": \"做饭\",\n    \"manualWeight\": 1,\n    \"paused\": false\n  }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2598,7 +2804,7 @@
                 }
               ]
             },
-            "description": "查询指定家庭菜品随机池。切换家庭时传当前选中的 familyCode。 支持可选分页参数 page/pageSize；不传时返回完整列表。"
+            "description": "查询指定家庭菜品随机池。切换家庭时传当前选中的 familyCode。支持可选分页参数 page/pageSize；不传时返回完整列表。结果会合并未隐藏的公共菜（source=public，带嵌套 recipe），并去掉 default_dish_*。每条含 recipeId、manualWeight、paused。响应含 publicCatalogVersion。"
           },
           "response": []
         },
@@ -2634,15 +2840,85 @@
               ],
               "query": []
             },
-            "description": "删除指定家庭下的条目。设备必须已加入该家庭。",
+            "description": "删除指定家庭下的条目。设备必须已加入该家庭。传公共菜 id 时是对本家庭隐藏，菜谱列表里同一道也会消失。",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"default_dish_1\"\n}",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"public_zhengdan_geng\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "加权抽签",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/drawFamilyRecipePool",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "drawFamilyRecipePool"]
+            },
+            "description": "服务端加权抽签。必填 familyCode。count 默认 1，最大 3。types 只接受外卖/堂食/做饭。intent：normal、quick、clear_fridge、healthy。候选为 0 时 items 为空，仍返回 drawId，不要拿去反馈。成功后请保存 drawId 和 dishId。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"mealName\": \"晚餐\",\n  \"count\": 1,\n  \"types\": [\"做饭\"],\n  \"intent\": \"normal\",\n  \"excludeDishIds\": [],\n  \"context\": {\n    \"isWorkday\": true,\n    \"hour\": 19,\n    \"weather\": \"normal\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "抽签反馈",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Id",
+                "value": "{{deviceId}}",
+                "type": "text"
+              },
+              {
+                "key": "X-Device-Secret",
+                "value": "{{deviceSecret}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/feedbackFamilyRecipePoolDraw",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feedbackFamilyRecipePoolDraw"]
+            },
+            "description": "action 只能是 accept、skip、cooked、reject。drawId 和 dishId 必须来自刚才的 drawFamilyRecipePool，否则 404。换一个先 skip，再抽时把该 dishId 放进 excludeDishIds。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"drawId\": \"draw_xxx\",\n  \"dishId\": \"public_zhengdan_geng\",\n  \"action\": \"skip\"\n}",
+              "options": { "raw": { "language": "json" } }
             }
           },
           "response": []
@@ -4705,7 +4981,7 @@
                 }
               ]
             },
-            "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems、consumptionRecords、dietPreferences、memos。个人随手记不属于家庭聚合数据，请单独调用 getPersonalNotes。"
+            "description": "查询指定家庭的聚合数据。设备必须已加入该家庭；切换家庭时传当前选中的 familyCode。返回 familyRecipe(兼容 { recipes })、familyRecipes、shoppingList、ingredientLibrary、shoppingCategories、ingredientCategories、recipeCategories、recipePoolItems、consumptionRecords、dietPreferences、memos、anchorPrices、publicCatalogVersion。菜谱和随机池含未隐藏公共菜。shoppingList 每条带 anchor。个人随手记不属于家庭聚合数据，请单独调用 getPersonalNotes。"
           },
           "response": []
         }

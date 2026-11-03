@@ -896,15 +896,81 @@ async function removeTempByDevice(deviceId, familyCode, date, mealName, recipeNa
   return { member, tempMenus: await removeTempByFamily(member.familyCode, date, mealName, recipeName) };
 }
 
+function addDaysToDateText(dateText, days) {
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function getDateDiffDaysText(startDate, endDate) {
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T00:00:00.000Z`);
+  return Math.round((end.getTime() - start.getTime()) / 86400000);
+}
+
+// 给随机池加权抽签用：菜名 -> 距今最少天数（出现在三餐安排里即计）。
+async function getRecentRecipeDaysByFamily(familyCode, options = {}) {
+  const lookbackDays = Number.isFinite(Number(options.lookbackDays))
+    ? Math.max(1, Math.min(366, Number(options.lookbackDays)))
+    : 30;
+  const todayText = normalizeText(options.today) || normalizeDate(new Date().toISOString().slice(0, 10));
+  const startDate = addDaysToDateText(todayText, -lookbackDays);
+  const result = new Map();
+
+  if (env.useMockDb) {
+    Array.from(mockPlanItems.values())
+      .filter((row) => (
+        row.family_code === familyCode
+        && row.plan_date >= startDate
+        && row.plan_date <= todayText
+        && row.recipe_name
+      ))
+      .forEach((row) => {
+        const days = getDateDiffDaysText(String(row.plan_date).slice(0, 10), todayText);
+        const current = result.get(row.recipe_name);
+        if (current === undefined || days < current) {
+          result.set(row.recipe_name, days);
+        }
+      });
+    return result;
+  }
+
+  const rows = await query(
+    `SELECT recipe_name, MAX(plan_date) AS last_date
+     FROM ${PLAN_ITEM_TABLE}
+     WHERE family_code = ?
+       AND plan_date BETWEEN ? AND ?
+     GROUP BY recipe_name`,
+    [familyCode, startDate, todayText]
+  );
+
+  rows.forEach((row) => {
+    const name = normalizeText(row.recipe_name);
+    if (!name) {
+      return;
+    }
+
+    const lastDate = row.last_date instanceof Date
+      ? row.last_date.toISOString().slice(0, 10)
+      : String(row.last_date).slice(0, 10);
+    result.set(name, getDateDiffDaysText(lastDate, todayText));
+  });
+
+  return result;
+}
+
 module.exports = {
+  listPlanByFamily,
   listPlanByDevice,
   savePlanByDevice,
   updateMealStatusByDevice,
   listDiaryByDevice,
+  listCommonByFamily,
   listCommonByDevice,
   addCommonByDevice,
   removeCommonByDevice,
   listTempByDevice,
   addTempByDevice,
-  removeTempByDevice
+  removeTempByDevice,
+  getRecentRecipeDaysByFamily
 };

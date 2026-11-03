@@ -1,0 +1,468 @@
+{
+  "info": {
+    "name": "家庭厨房 2026-11-03 变更",
+    "description": "只含 2026-11-03 这次要联调的接口。导入 Postman / Apifox 后先填 collection 变量 deviceId、deviceSecret、familyCode。除注册设备外都要带 X-Device-Id / X-Device-Secret。\n\n三块变更：\n1. 公共菜谱会混进菜谱列表和随机池，source=public 为只读。删公共菜是对本家庭隐藏。旧 default_dish_* 不再返回。目录版本看 publicCatalogVersion，当前为 1。公共菜数据在服务器文件 data/public-recipes.json，不进数据库。\n2. 随机抽菜改服务端加权抽签：drawFamilyRecipePool，再用 feedbackFamilyRecipePoolDraw 回传 accept/skip/cooked/reject。换一个要先 skip，再带 excludeDishIds 重抽。\n3. 锚定价格跟购物清单 price 分开。清单条目多了 anchor；getFamilyData 多了 anchorPrices。\n\n抽签成功后脚本会把 drawId、dishId 写进变量，反馈请求可直接跑。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:3000" },
+    { "key": "deviceId", "value": "" },
+    { "key": "deviceSecret", "value": "" },
+    { "key": "familyCode", "value": "" },
+    { "key": "drawId", "value": "" },
+    { "key": "dishId", "value": "public_zhengdan_geng" },
+    { "key": "anchorId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "公共菜谱",
+      "description": "路径没变。列表会追加未隐藏的公共菜。source 为 public 的不能用 save/update 修改，会 400。同名家庭菜优先，公共那道不再出现。",
+      "item": [
+        {
+          "name": "按家庭查询菜谱（含公共菜）",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyRecipe?familyCode={{familyCode}}",
+            "description": "家庭自有菜没有 source 字段。公共菜 source=public，带 ingredients 和 steps。id 以 public_ 开头。"
+          },
+          "response": [
+            {
+              "name": "列表示例",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/getFamilyRecipe?familyCode={{familyCode}}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"familyCode\": \"fam_xxx\",\n    \"recipeList\": [\n      {\n        \"id\": \"public_zhengdan_geng\",\n        \"recipeId\": \"public_zhengdan_geng\",\n        \"name\": \"蒸蛋羹（万能公式）\",\n        \"source\": \"public\",\n        \"difficulty\": \"简单\",\n        \"duration\": \"15分钟\",\n        \"ingredients\": [{ \"name\": \"鸡蛋\", \"amount\": \"3个\", \"isSeasoning\": false }],\n        \"steps\": [\"鸡蛋打散\"]\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "查询单条公共菜谱",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyRecipeItem?familyCode={{familyCode}}&id=public_zhengdan_geng",
+            "description": "公共菜未隐藏时按公共 id 能打开详情。已隐藏则 404 菜谱不存在。"
+          },
+          "response": []
+        },
+        {
+          "name": "隐藏一道公共菜谱",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/deleteFamilyRecipeItem",
+            "description": "沿用删除接口。对公共 id 的效果是这个家庭不再看到它，菜谱列表和随机池一起隐藏。不会改服务器上的公共菜谱文件。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"public_zhengdan_geng\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "菜品随机池",
+      "description": "保存路径不变。新增可选 recipeId、manualWeight(0.2~3)、paused。列表会合并公共菜，并丢掉 default_dish_*。",
+      "item": [
+        {
+          "name": "保存池菜（含权重和暂停）",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/saveFamilyRecipePoolItem",
+            "description": "旧写法只传 name + type 仍然可用。暂停或改公共菜权重时，id 必须用公共 id，名称不要改。保存响应没有 source 和嵌套 recipe，要再查列表。manualWeight 超出 0.2~3 返回 400。和公共菜同名但 id 不同会 409 菜品名称已存在。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"dishJson\": {\n    \"id\": \"public_zhengdan_geng\",\n    \"name\": \"蒸蛋羹（万能公式）\",\n    \"type\": \"做饭\",\n    \"manualWeight\": 1.2,\n    \"paused\": false\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询随机池（含公共菜）",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyRecipePoolItems?familyCode={{familyCode}}",
+            "description": "不传 page/pageSize 返回全部。每条含 recipeId、manualWeight、paused。公共菜 source=public，并带嵌套 recipe。响应含 publicCatalogVersion。"
+          },
+          "response": [
+            {
+              "name": "列表示例",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/getFamilyRecipePoolItems?familyCode={{familyCode}}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"dishes\": [\n      {\n        \"id\": \"public_zhengdan_geng\",\n        \"dishId\": \"public_zhengdan_geng\",\n        \"name\": \"蒸蛋羹（万能公式）\",\n        \"recipeId\": \"public_zhengdan_geng\",\n        \"type\": \"做饭\",\n        \"manualWeight\": 1,\n        \"paused\": false,\n        \"isDefault\": true,\n        \"source\": \"public\",\n        \"recipe\": {\n          \"id\": \"public_zhengdan_geng\",\n          \"name\": \"蒸蛋羹（万能公式）\",\n          \"source\": \"public\",\n          \"steps\": []\n        }\n      }\n    ],\n    \"publicCatalogVersion\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "隐藏一道公共池菜",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/deleteFamilyRecipePoolItem",
+            "description": "公共 id 与菜谱删除共用同一份隐藏记录。对已隐藏的公共菜再 save 一次同 id，会取消隐藏。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"public_zhengdan_geng\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "加权抽签",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const drawId = json && json.data && json.data.drawId;",
+                  "const item = json && json.data && json.data.items && json.data.items[0];",
+                  "if (drawId) pm.collectionVariables.set('drawId', drawId);",
+                  "if (item && item.dishId) pm.collectionVariables.set('dishId', item.dishId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/drawFamilyRecipePool",
+            "description": "必填 familyCode。count 默认 1，最大 3。types 只接受 外卖/堂食/做饭，空数组或不传表示不限。intent：normal、quick、clear_fridge、healthy。context.hour 为 0-23，不传按北京时间。候选为 0 时仍返回 drawId，items 为空，candidateCount 为 0，这时不要拿去反馈。未加入家庭 403。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"mealName\": \"晚餐\",\n  \"count\": 1,\n  \"types\": [\"做饭\"],\n  \"intent\": \"normal\",\n  \"excludeDishIds\": [],\n  \"context\": {\n    \"isWorkday\": true,\n    \"hour\": 19,\n    \"weather\": \"normal\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "抽中示例",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/drawFamilyRecipePool" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"drawId\": \"draw_xxx\",\n    \"items\": [\n      {\n        \"dishId\": \"public_zhengdan_geng\",\n        \"id\": \"public_zhengdan_geng\",\n        \"name\": \"蒸蛋羹（万能公式）\",\n        \"type\": \"做饭\",\n        \"recipeId\": \"public_zhengdan_geng\",\n        \"score\": 1.8421,\n        \"reasons\": [\"默认菜×1.15\"],\n        \"missingIngredients\": [\"鸡蛋\"],\n        \"expiringIngredients\": []\n      }\n    ],\n    \"context\": {\n      \"mealName\": \"晚餐\",\n      \"intent\": \"normal\",\n      \"isWorkday\": true,\n      \"hour\": 19,\n      \"weather\": \"normal\",\n      \"today\": \"2026-11-03\",\n      \"diningSpendHigh\": false,\n      \"goalType\": null,\n      \"candidateCount\": 4\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "抽签反馈 skip（换一个）",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/feedbackFamilyRecipePoolDraw",
+            "description": "action 只能是 accept、skip、cooked、reject。drawId + dishId 必须来自刚才那次抽签，否则 404 抽签记录不存在。换一个：本请求 action=skip 成功后，再调加权抽签，excludeDishIds 带上这个 dishId。accept 在写入今日计划前调用。cooked 在打卡完成时调用。reject 表示明确不想再看到。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"drawId\": \"{{drawId}}\",\n  \"dishId\": \"{{dishId}}\",\n  \"action\": \"skip\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "反馈示例",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/feedbackFamilyRecipePoolDraw" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"drawId\": \"draw_xxx\",\n    \"dishId\": \"public_zhengdan_geng\",\n    \"dishName\": \"蒸蛋羹（万能公式）\",\n    \"action\": \"skip\",\n    \"score\": 1.8421\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "抽签反馈 accept",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/feedbackFamilyRecipePoolDraw",
+            "description": "用户点「就吃这个」时调用。然后再用原有三餐接口写入计划。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"drawId\": \"{{drawId}}\",\n  \"dishId\": \"{{dishId}}\",\n  \"action\": \"accept\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "锚定价格",
+      "description": "长期参考价。购物清单的 price 仍是这次的自由文本。名称去首尾空格、合并连续空格、忽略英文大小写后匹配。不带 tag 是该名称的默认锚定。",
+      "item": [
+        {
+          "name": "保存默认锚定",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const anchor = json && json.data && json.data.anchor;",
+                  "if (anchor && anchor.anchorId) pm.collectionVariables.set('anchorId', anchor.anchorId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/saveFamilyAnchorPrice",
+            "description": "同一家庭 + 名称 + 标签已存在时改价并沿用原 id。anchorPrice 为 0~999999.99 的数字，最多两位小数，不要带「元」。updateFamilyAnchorPrice 与本接口同一套逻辑。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"anchorPriceJson\": {\n    \"name\": \"牛奶\",\n    \"anchorPrice\": 12\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "保存示例",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/saveFamilyAnchorPrice" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"anchor\": {\n      \"id\": \"anchor_xxx\",\n      \"anchorId\": \"anchor_xxx\",\n      \"familyCode\": \"fam_xxx\",\n      \"name\": \"牛奶\",\n      \"tag\": null,\n      \"anchorPrice\": 12,\n      \"deleted\": false\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "保存带标签的锚定",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/saveFamilyAnchorPrice",
+            "description": "tag 最长 50 字，用来区分渠道、品牌或规格。也可以把 name、tag、anchorPrice 直接放在 body 顶层，不必包进 anchorPriceJson。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"anchorPriceJson\": {\n    \"name\": \"五花肉\",\n    \"tag\": \"菜市场\",\n    \"anchorPrice\": 28\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "修改锚定价格",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/updateFamilyAnchorPrice",
+            "description": "与保存同一套逻辑。带上已有 anchorId，或用相同 name + tag 覆盖。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"anchorPriceJson\": {\n    \"id\": \"{{anchorId}}\",\n    \"name\": \"牛奶\",\n    \"anchorPrice\": 13.5\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "查询锚定列表",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyAnchorPrices?familyCode={{familyCode}}&name=牛奶",
+            "description": "可省略 name 查全部。可选 page、pageSize，不传则全量。数据在 data.anchors。"
+          },
+          "response": []
+        },
+        {
+          "name": "按 id 查询一条锚定",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyAnchorPrice?familyCode={{familyCode}}&id={{anchorId}}",
+            "description": "不存在或已删除返回 404 锚定价格不存在。"
+          },
+          "response": []
+        },
+        {
+          "name": "按名称匹配参考价",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/matchFamilyAnchorPrice?familyCode={{familyCode}}&name=牛奶",
+            "description": "没设过也返回 200，anchorCount 为 0。有默认锚定时 anchorPrice 用默认价。没有默认且只有一条时用那一条。没有默认且有多条时 anchorPrice 为 null，看 anchorMin / anchorMax。要精确到标签再加 query tag。"
+          },
+          "response": [
+            {
+              "name": "匹配示例",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/matchFamilyAnchorPrice?familyCode={{familyCode}}&name=牛奶" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"match\": {\n      \"name\": \"牛奶\",\n      \"anchorPrice\": 12,\n      \"anchorMin\": 10,\n      \"anchorMax\": 15,\n      \"anchorCount\": 3,\n      \"matches\": [\n        { \"anchorId\": \"anchor_a\", \"name\": \"牛奶\", \"tag\": null, \"anchorPrice\": 12 },\n        { \"anchorId\": \"anchor_b\", \"name\": \"牛奶\", \"tag\": \"伊利\", \"anchorPrice\": 10 },\n        { \"anchorId\": \"anchor_c\", \"name\": \"牛奶\", \"tag\": \"盒马\", \"anchorPrice\": 15 }\n      ]\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "锚定增量",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyAnchorPriceChanges?familyCode={{familyCode}}&since=0",
+            "description": "since 用上次响应里的 serverTime（毫秒时间戳）。结果含软删除，deleted 为 true 的要从本地去掉。首次可传 0。"
+          },
+          "response": []
+        },
+        {
+          "name": "删除锚定",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/deleteFamilyAnchorPrice",
+            "description": "传 id 删指定一条。或只传 name 删该名称的默认锚定。删某个标签必须同时传 tag，不传 tag 不会删带标签的记录。",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"familyCode\": \"{{familyCode}}\",\n  \"id\": \"{{anchorId}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "聚合与购物清单附带字段",
+      "description": "这两个旧接口的路径没变，响应多了字段。购物清单的查询、增量、保存、删除返回里，每条 item 都多了 anchor，对不上为 null。price 不变。",
+      "item": [
+        {
+          "name": "查询家庭聚合数据",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyData?familyCode={{familyCode}}",
+            "description": "新增 anchorPrices（有效锚定，不含已删除）和 publicCatalogVersion。familyRecipes、familyRecipe.recipeJson.recipes 含公共菜。recipePoolItems 含公共菜且不含 default_dish_*。shoppingList 每条带 anchor。"
+          },
+          "response": [
+            {
+              "name": "新增字段示例",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": { "raw": "{{baseUrl}}/api/getFamilyData?familyCode={{familyCode}}" }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"data\": {\n    \"shoppingList\": [\n      {\n        \"name\": \"牛奶\",\n        \"price\": \"2元\",\n        \"anchor\": {\n          \"anchorPrice\": 12,\n          \"anchorMin\": 12,\n          \"anchorMax\": 12,\n          \"anchorCount\": 1,\n          \"matches\": [\n            { \"anchorId\": \"anchor_a\", \"name\": \"牛奶\", \"tag\": null, \"anchorPrice\": 12 }\n          ]\n        }\n      }\n    ],\n    \"anchorPrices\": [\n      {\n        \"anchorId\": \"anchor_a\",\n        \"name\": \"牛奶\",\n        \"tag\": null,\n        \"anchorPrice\": 12,\n        \"deleted\": false\n      }\n    ],\n    \"publicCatalogVersion\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "查询购物清单（条目带 anchor）",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Device-Id", "value": "{{deviceId}}" },
+              { "key": "X-Device-Secret", "value": "{{deviceSecret}}" }
+            ],
+            "url": "{{baseUrl}}/api/getFamilyShoppingItems?familyCode={{familyCode}}",
+            "description": "item.anchor 结构与 matchFamilyAnchorPrice 的 match 相同。没有锚定时 anchor 为 null。单条查询、增量、保存、删除、清空已购的返回 item 同样带 anchor。"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

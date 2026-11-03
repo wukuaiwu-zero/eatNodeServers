@@ -8,6 +8,8 @@ const familyRecipePoolService = require('../services/familyRecipePool.service');
 const familyConsumptionService = require('../services/familyConsumption.service');
 const familyDietPreferenceService = require('../services/familyDietPreference.service');
 const familyMemoService = require('../services/familyMemo.service');
+const familyAnchorPriceService = require('../services/familyAnchorPrice.service');
+const publicRecipeCatalog = require('../services/publicRecipeCatalog.service');
 const deviceService = require('../services/device.service');
 const familyService = require('../services/family.service');
 const { getDeviceCredentials, normalizeText } = require('../utils/request');
@@ -44,6 +46,7 @@ async function getFamilyJsonData(req, res, next) {
     const consumptionRecords = await familyConsumptionService.listRecordsByFamily(member.familyCode);
     const dietPreferences = await familyDietPreferenceService.listPreferencesByFamily(member.familyCode);
     const memos = await familyMemoService.listMemosByFamily(member.familyCode);
+    const anchorPrices = await familyAnchorPriceService.listAnchorsByFamily(member.familyCode);
 
     // 返回字段明确拆成三块：
     // - familyRecipe：兼容旧字段，值为 { recipes: [...] }。
@@ -63,7 +66,9 @@ async function getFamilyJsonData(req, res, next) {
         recipePoolItems,
         consumptionRecords,
         dietPreferences,
-        memos
+        memos,
+        anchorPrices,
+        publicCatalogVersion: publicRecipeCatalog.getVersion()
       }
     });
   } catch (error) {
